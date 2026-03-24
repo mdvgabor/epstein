@@ -1,0 +1,3 @@
+- Try a different counting model for the target numbers: dedupe near-duplicate messages or restrict to more direct exchanges if Economist counts are closer to conversation-level or direct-address traffic than raw row counts.
+- Learn stronger Jeffrey recipient aliases from recipient-side frequency plus sender-email evidence, instead of the naive broad alias expansion that improved totals but hurt ratios.
+- Beam search is only worth revisiting with explicit per-person allowlists or validation. The unconstrained version overfit badly to junk names like Peter Mandelson / Ariane Dwyer; the globally tightened version lost too much legitimate coverage.

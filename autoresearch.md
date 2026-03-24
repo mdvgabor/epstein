@@ -33,9 +33,18 @@ The ratio is interpreted as `sent_to_jeff / received_from_jeff`, where `sent_to_
 - No new dependencies.
 - Optimize for correctness of matched correspondents, not runtime.
 - Prefer explicit heuristics grounded in observed aliases over broad fuzzy matching that drags in family/staff false positives.
+- Avoid magic numbers & heuristics.
+- Paralelise work using polars builtins
 
 ## What's Been Tried
 - Initial `correspondace.py` reparses sender/to/cc/bcc from `data/emails.normalized.parquet`, derives simplified `name_key`, hand-picks a few Jeffrey aliases, and searches combinations of candidate name keys to approximate the Economist totals.
-- This already gets close for `Bill Gates`, `Larry Summers`, `Michael Wolff`, and `Steve Bannon`.
-- Biggest misses appear driven by weak Jeffrey alias coverage and insufficient use of parsed email addresses when name keys are noisy.
-- Another likely issue: quoted-thread/header artifacts inflate candidate keys with junk like `unknown`, `redacted`, or composite strings.
+- Best kept improvement so far: fill missing person keys with an email-derived fallback key (`search_key = coalesce(name_key, email_key)`). That reduced `combined_error` from about `3.10` to about `3.06`.
+- This kept version is already close for `Larry Summers`, `Michael Wolff`, `Thomas Pritzker`, and `Steve Bannon`.
+- Biggest remaining misses are `Ariane de Rothschild`, `Elon Musk`, `Bill Gates`, `Reid Hoffman`, `Kathryn Ruemmler`, and `Lawrence Krauss`.
+- Failed experiments:
+  - broad tightening of include tokens made totals much worse by removing legitimate noisy aliases
+  - broad Jeffrey alias auto-expansion improved total coverage but distorted ratios
+  - exhaustive directional sender/recipient subset search looked promising but timed out
+  - greedy directional search overfit junk high-volume keys like `billconover` and `jermaine`
+  - global penalties for non-preferred aliases cleaned up some local cases but hurt the overall metric
+- Strong current belief: the hard cases need either person-specific directional alias handling or a different counting model, not just more generic alias tweaks.
