@@ -72,7 +72,7 @@ jeff_sender_ids = set(
         (pl.col("address_role") == "sender")
         & (
             pl.col("email").is_in(["jeevacation@gmail.com", "jeeproject@yahoo.com", "jeeyacation@gmail.com"])
-            | pl.col("search_key").is_in(["jeffreye", "jeffreyepstein", "jepstein", "jeffrey", "jeevacationgmailcom", "jeeprojectyahoocom", "jeeyacationgmailcom", "jefffreyepstein", "jeffepstein", "jeevacation"])
+            | pl.col("search_key").is_in(["jeffreye", "jeffreyepstein", "jepstein", "jeffrey", "jeevacationgmailcom", "jeeprojectyahoocom", "jeeyacationgmailcom", "jefffreyepstein", "jeffepstein", "jeevacation", "jefreyepstein", "jeeproject", "jeevacationmailcom", "jeevacationepstein"])
         )
     ).get_column("id")
 )
@@ -81,7 +81,7 @@ jeff_recipient_ids = set(
         pl.col("address_role").is_in(["to_recipients", "cc_recipients", "bcc_recipients"])
         & (
             pl.col("email").is_in(["jeevacation@gmail.com", "jeeproject@yahoo.com", "jeeyacation@gmail.com"])
-            | pl.col("search_key").is_in(["jeffreye", "jeffreyepstein", "jepstein", "jeffrey", "jeevacationgmailcom", "jeeprojectyahoocom", "jeeyacationgmailcom", "jefffreyepstein", "jeffepstein", "jeevacation"])
+            | pl.col("search_key").is_in(["jeffreye", "jeffreyepstein", "jepstein", "jeffrey", "jeevacationgmailcom", "jeeprojectyahoocom", "jeeyacationgmailcom", "jefffreyepstein", "jeffepstein", "jeevacation", "jefreyepstein", "jeeproject", "jeevacationmailcom", "jeevacationepstein"])
         )
     ).get_column("id")
 )
