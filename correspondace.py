@@ -186,7 +186,7 @@ for target in targets.iter_rows(named=True):
                 best_total = total
                 best_ratio = ratio
 
-    if target["name"] in ["Ariane de Rothschild", "Lawrence Krauss"]:
+    if target["name"] in ["Ariane de Rothschild", "Lawrence Krauss", "Kathryn Ruemmler"]:
         shared_keys = list(best_keys)
         remaining = [key for key in candidates if key not in shared_keys]
         base_sender = set().union(*(sender_ids_by_key[key] for key in shared_keys))
