@@ -119,6 +119,17 @@ search = {
 
 role_is_recipient = pl.col("address_role").is_in(["to_recipients", "cc_recipients", "bcc_recipients"])
 name_counts = addresses.group_by("search_key").len().filter(pl.col("search_key").is_not_null())
+sender_key_stats = (
+    addresses.filter((pl.col("address_role") == "sender") & pl.col("id").is_in(list(jeff_recipient_ids)))
+    .group_by("search_key")
+    .agg(pl.col("id").n_unique().alias("sender_count"))
+)
+recipient_key_stats = (
+    addresses.filter(role_is_recipient & pl.col("id").is_in(list(jeff_sender_ids)))
+    .group_by("search_key")
+    .agg(pl.col("id").n_unique().alias("recipient_count"))
+)
+key_stats = name_counts.join(sender_key_stats, on="search_key", how="left").join(recipient_key_stats, on="search_key", how="left").fill_null(0)
 people = []
 
 for target in targets.iter_rows(named=True):
@@ -126,7 +137,11 @@ for target in targets.iter_rows(named=True):
     include_match = pl.any_horizontal(*[pl.col("search_key").str.contains(token, literal=True) for token in rules["include"]])
     exclude_match = pl.any_horizontal(*[pl.col("search_key").str.contains(token, literal=True) for token in rules["exclude"]]) if rules["exclude"] else pl.lit(False)
     candidates = (
-        name_counts.filter(include_match & ~exclude_match)
+        key_stats.filter(include_match & ~exclude_match)
+        .filter(
+            ((pl.col("sender_count") + pl.col("recipient_count")) > 0)
+            | pl.col("search_key").is_in(rules["prefer"])
+        )
         .sort("len", descending=True)
         .get_column("search_key")
         .to_list()
