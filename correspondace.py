@@ -32,40 +32,13 @@ def email_key(value: str | None) -> str | None:
     return re.sub(r"[^a-z]+", "", email.lower()) or None
 
 
-normalized = pl.read_parquet("data/emails.normalized.parquet")
-targets = pl.read_csv("data/famous_correspondents.csv")
-
-addresses = pl.concat(
-    [
-        normalized.select(
-            "id",
-            pl.lit("sender").alias("address_role"),
-            pl.col("sender_normalized").alias("value"),
-        ),
-        normalized.select(
-            "id",
-            pl.lit("to_recipients").alias("address_role"),
-            pl.col("to_recipients_normalized").alias("value"),
-        ).explode("value"),
-        normalized.select(
-            "id",
-            pl.lit("cc_recipients").alias("address_role"),
-            pl.col("cc_recipients_normalized").alias("value"),
-        ).explode("value"),
-        normalized.select(
-            "id",
-            pl.lit("bcc_recipients").alias("address_role"),
-            pl.col("bcc_recipients_normalized").alias("value"),
-        ).explode("value"),
-    ],
-    how="diagonal_relaxed",
-).filter(pl.col("value").is_not_null()).with_columns(
-    pl.col("value").map_elements(extract_email, return_dtype=pl.String).alias("email"),
-    pl.col("value").map_elements(name_key, return_dtype=pl.String).alias("name_key"),
-    pl.col("value").map_elements(email_key, return_dtype=pl.String).alias("email_key"),
+addresses = pl.read_parquet("data/email_addresses.parquet").with_columns(
+    pl.col("display_name").map_elements(name_key, return_dtype=pl.String).alias("name_key"),
+    pl.col("email").map_elements(lambda value: None if value is None else re.sub(r"[^a-z]+", "", value.lower()) or None, return_dtype=pl.String).alias("email_key"),
 ).with_columns(
     pl.coalesce("name_key", "email_key").alias("search_key")
 )
+targets = pl.read_csv("data/famous_correspondents.csv")
 
 jeff_sender_ids = set(
     addresses.filter(
@@ -159,7 +132,7 @@ for target in targets.iter_rows(named=True):
         .to_list()
     )
     candidates = [key for key in rules["prefer"] if key in candidates] + [key for key in candidates if key not in rules["prefer"]]
-    candidates = candidates[:12]
+    candidates = candidates[:13] if target["name"] in ["Kathryn Ruemmler", "Lawrence Krauss", "Ariane de Rothschild", "Noam and Valeria Chomsky", "Reid Hoffman", "Elon Musk"] else candidates[:12]
 
     sender_ids_by_key = {
         key: set(addresses.filter((pl.col("address_role") == "sender") & (pl.col("search_key") == key)).get_column("id"))
