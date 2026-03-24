@@ -1,0 +1,23 @@
+[project]
+name = "epstein"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    "pydantic==2.13.0b2",
+    "polars>=1.39.0",
+    "spacy>=3.8.11",
+    "tqdm>=4.67.0",
+    "torch>=2.10.0", # For MPS
+    "thinc-apple-ops",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+]
+
+[tool.uv.sources]
+thinc-apple-ops = { git = "https://github.com/explosion/thinc-apple-ops" } # git install for python 3.14
