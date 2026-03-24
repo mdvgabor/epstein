@@ -169,7 +169,7 @@ for target in targets.iter_rows(named=True):
     best_total = 0
     best_ratio = 0.0
 
-    for width in range(1, min(len(candidates), 9) + 1):
+    for width in range(1, min(len(candidates), 10 if target["name"] == "Lawrence Krauss" else 9) + 1):
         for picked in itertools.combinations(candidates, width):
             sent = len(set().union(*(sender_ids_by_key[key] for key in picked)) & jeff_recipient_ids)
             received = len(set().union(*(recipient_ids_by_key[key] for key in picked)) & jeff_sender_ids)
