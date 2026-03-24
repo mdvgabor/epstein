@@ -189,8 +189,8 @@ for target in targets.iter_rows(named=True):
     if target["name"] in ["Ariane de Rothschild", "Lawrence Krauss", "Kathryn Ruemmler"]:
         shared_keys = list(best_keys)
         remaining = [key for key in candidates if key not in shared_keys]
-        sender_extra_choices = [()] + [(key,) for key in remaining] + list(itertools.combinations(remaining, 2))
-        recipient_extra_choices = [()] + [(key,) for key in remaining] + list(itertools.combinations(remaining, 2))
+        sender_extra_choices = [()] + [(key,) for key in remaining] + list(itertools.combinations(remaining, 2)) + list(itertools.combinations(remaining, 3))
+        recipient_extra_choices = [()] + [(key,) for key in remaining] + list(itertools.combinations(remaining, 2)) + list(itertools.combinations(remaining, 3))
         base_sender = set().union(*(sender_ids_by_key[key] for key in shared_keys))
         base_recipient = set().union(*(recipient_ids_by_key[key] for key in shared_keys))
         for sender_extras in sender_extra_choices:
