@@ -189,14 +189,16 @@ for target in targets.iter_rows(named=True):
     if target["name"] in ["Ariane de Rothschild", "Lawrence Krauss", "Kathryn Ruemmler"]:
         shared_keys = list(best_keys)
         remaining = [key for key in candidates if key not in shared_keys]
+        sender_extra_choices = [()] + [(key,) for key in remaining] + list(itertools.combinations(remaining, 2))
+        recipient_extra_choices = [()] + [(key,) for key in remaining] + list(itertools.combinations(remaining, 2))
         base_sender = set().union(*(sender_ids_by_key[key] for key in shared_keys))
         base_recipient = set().union(*(recipient_ids_by_key[key] for key in shared_keys))
-        for sender_extra in [None] + remaining:
-            for recipient_extra in [None] + remaining:
-                if sender_extra is None and recipient_extra is None:
+        for sender_extras in sender_extra_choices:
+            for recipient_extras in recipient_extra_choices:
+                if not sender_extras and not recipient_extras:
                     continue
-                sent_ids = base_sender if sender_extra is None else base_sender | sender_ids_by_key[sender_extra]
-                received_ids = base_recipient if recipient_extra is None else base_recipient | recipient_ids_by_key[recipient_extra]
+                sent_ids = base_sender | set().union(*(sender_ids_by_key[key] for key in sender_extras))
+                received_ids = base_recipient | set().union(*(recipient_ids_by_key[key] for key in recipient_extras))
                 received = len(received_ids & jeff_sender_ids)
                 if received == 0:
                     continue
@@ -206,7 +208,7 @@ for target in targets.iter_rows(named=True):
                 score = abs(total - target["total_emails"]) / target["total_emails"] + abs(math.log((ratio + 1e-9) / target["ratio"]))
                 if score < best_score:
                     best_score = score
-                    best_keys = [f"shared: {', '.join(shared_keys)}"] + ([f"from+: {sender_extra}"] if sender_extra else []) + ([f"to+: {recipient_extra}"] if recipient_extra else [])
+                    best_keys = [f"shared: {', '.join(shared_keys)}"] + [f"from+: {key}" for key in sender_extras] + [f"to+: {key}" for key in recipient_extras]
                     best_sent = sent
                     best_received = received
                     best_total = total
