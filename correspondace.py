@@ -111,7 +111,7 @@ search = {
         "prefer": ["billgates", "billgatesredacted"],
     },
     "Elon Musk": {
-        "include": ["musk", "elon", "erm"],
+        "include": ["musk", "elon"],
         "exclude": ["kimbal", "kimbal", "maye", "talulah"],
         "prefer": ["elonmusk", "etonmusk", "elonmuskredacted", "elonmuskelonspaexcom"],
     },
