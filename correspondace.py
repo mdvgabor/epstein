@@ -186,10 +186,11 @@ for target in targets.iter_rows(named=True):
                 best_total = total
                 best_ratio = ratio
 
-    if target["name"] == "Ariane de Rothschild":
-        remaining = [key for key in candidates if key not in best_keys]
-        base_sender = set().union(*(sender_ids_by_key[key] for key in best_keys))
-        base_recipient = set().union(*(recipient_ids_by_key[key] for key in best_keys))
+    if target["name"] in ["Ariane de Rothschild", "Lawrence Krauss"]:
+        shared_keys = list(best_keys)
+        remaining = [key for key in candidates if key not in shared_keys]
+        base_sender = set().union(*(sender_ids_by_key[key] for key in shared_keys))
+        base_recipient = set().union(*(recipient_ids_by_key[key] for key in shared_keys))
         for sender_extra in [None] + remaining:
             for recipient_extra in [None] + remaining:
                 if sender_extra is None and recipient_extra is None:
@@ -205,7 +206,7 @@ for target in targets.iter_rows(named=True):
                 score = abs(total - target["total_emails"]) / target["total_emails"] + abs(math.log((ratio + 1e-9) / target["ratio"]))
                 if score < best_score:
                     best_score = score
-                    best_keys = [f"shared: {', '.join(best_keys)}"] + ([f"from+: {sender_extra}"] if sender_extra else []) + ([f"to+: {recipient_extra}"] if recipient_extra else [])
+                    best_keys = [f"shared: {', '.join(shared_keys)}"] + ([f"from+: {sender_extra}"] if sender_extra else []) + ([f"to+: {recipient_extra}"] if recipient_extra else [])
                     best_sent = sent
                     best_received = received
                     best_total = total
