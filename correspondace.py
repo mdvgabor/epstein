@@ -151,7 +151,7 @@ for target in targets.iter_rows(named=True):
         .to_list()
     )
     candidates = [key for key in rules["prefer"] if key in candidates] + [key for key in candidates if key not in rules["prefer"]]
-    candidates = candidates[:17] if target["name"] == "Lawrence Krauss" else candidates[:16] if target["name"] == "Reid Hoffman" else candidates[:14] if target["name"] in ["Kathryn Ruemmler", "Ariane de Rothschild", "Noam and Valeria Chomsky", "Bill Gates"] else candidates[:13] if target["name"] == "Elon Musk" else candidates[:12]
+    candidates = candidates[:20] if target["name"] == "Lawrence Krauss" else candidates[:16] if target["name"] == "Reid Hoffman" else candidates[:14] if target["name"] in ["Kathryn Ruemmler", "Ariane de Rothschild", "Noam and Valeria Chomsky", "Bill Gates"] else candidates[:13] if target["name"] == "Elon Musk" else candidates[:12]
 
     sender_ids_by_key = {
         key: set(addresses.filter((pl.col("address_role") == "sender") & (pl.col("search_key") == key)).get_column("id"))
@@ -193,12 +193,14 @@ for target in targets.iter_rows(named=True):
         recipient_extra_choices = [()] + [(key,) for key in remaining] + list(itertools.combinations(remaining, 2)) + list(itertools.combinations(remaining, 3))
         base_sender = set().union(*(sender_ids_by_key[key] for key in shared_keys))
         base_recipient = set().union(*(recipient_ids_by_key[key] for key in shared_keys))
-        for sender_extras in sender_extra_choices:
-            for recipient_extras in recipient_extra_choices:
+        sender_extra_sets = [(extras, set().union(*(sender_ids_by_key[key] for key in extras))) for extras in sender_extra_choices]
+        recipient_extra_sets = [(extras, set().union(*(recipient_ids_by_key[key] for key in extras))) for extras in recipient_extra_choices]
+        for sender_extras, sender_extra_ids in sender_extra_sets:
+            for recipient_extras, recipient_extra_ids in recipient_extra_sets:
                 if not sender_extras and not recipient_extras:
                     continue
-                sent_ids = base_sender | set().union(*(sender_ids_by_key[key] for key in sender_extras))
-                received_ids = base_recipient | set().union(*(recipient_ids_by_key[key] for key in recipient_extras))
+                sent_ids = base_sender | sender_extra_ids
+                received_ids = base_recipient | recipient_extra_ids
                 received = len(received_ids & jeff_sender_ids)
                 if received == 0:
                     continue
