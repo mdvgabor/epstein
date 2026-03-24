@@ -151,7 +151,7 @@ for target in targets.iter_rows(named=True):
         .to_list()
     )
     candidates = [key for key in rules["prefer"] if key in candidates] + [key for key in candidates if key not in rules["prefer"]]
-    candidates = candidates[:17] if target["name"] == "Lawrence Krauss" else candidates[:14] if target["name"] in ["Kathryn Ruemmler", "Ariane de Rothschild", "Noam and Valeria Chomsky"] else candidates[:13] if target["name"] in ["Reid Hoffman", "Elon Musk", "Bill Gates"] else candidates[:12]
+    candidates = candidates[:17] if target["name"] == "Lawrence Krauss" else candidates[:14] if target["name"] in ["Kathryn Ruemmler", "Ariane de Rothschild", "Noam and Valeria Chomsky", "Bill Gates"] else candidates[:13] if target["name"] in ["Reid Hoffman", "Elon Musk"] else candidates[:12]
 
     sender_ids_by_key = {
         key: set(addresses.filter((pl.col("address_role") == "sender") & (pl.col("search_key") == key)).get_column("id"))
