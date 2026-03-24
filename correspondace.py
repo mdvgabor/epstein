@@ -139,7 +139,11 @@ for target in targets.iter_rows(named=True):
     candidates = (
         key_stats.filter(include_match & ~exclude_match)
         .filter(
-            ((pl.col("sender_count") + pl.col("recipient_count")) > 0)
+            (
+                ((pl.col("sender_count") + pl.col("recipient_count")) > 1)
+                if target["name"] in ["Kathryn Ruemmler", "Lawrence Krauss", "Ariane de Rothschild", "Noam and Valeria Chomsky", "Reid Hoffman", "Elon Musk", "Bill Gates"]
+                else ((pl.col("sender_count") + pl.col("recipient_count")) > 0)
+            )
             | pl.col("search_key").is_in(rules["prefer"])
         )
         .sort("len", descending=True)
