@@ -25,6 +25,13 @@ def name_key(value: str | None) -> str | None:
     return cleaned or None
 
 
+def email_key(value: str | None) -> str | None:
+    email = extract_email(value)
+    if email is None:
+        return None
+    return re.sub(r"[^a-z]+", "", email.lower()) or None
+
+
 normalized = pl.read_parquet("data/emails.normalized.parquet")
 targets = pl.read_csv("data/famous_correspondents.csv")
 
@@ -55,6 +62,9 @@ addresses = pl.concat(
 ).filter(pl.col("value").is_not_null()).with_columns(
     pl.col("value").map_elements(extract_email, return_dtype=pl.String).alias("email"),
     pl.col("value").map_elements(name_key, return_dtype=pl.String).alias("name_key"),
+    pl.col("value").map_elements(email_key, return_dtype=pl.String).alias("email_key"),
+).with_columns(
+    pl.coalesce("name_key", "email_key").alias("search_key")
 )
 
 jeff_sender_ids = set(
@@ -62,7 +72,7 @@ jeff_sender_ids = set(
         (pl.col("address_role") == "sender")
         & (
             pl.col("email").is_in(["jeevacation@gmail.com", "jeeproject@yahoo.com", "jeeyacation@gmail.com"])
-            | pl.col("name_key").is_in(["jeffreye", "jeffreyepstein", "jepstein", "jeffrey"])
+            | pl.col("search_key").is_in(["jeffreye", "jeffreyepstein", "jepstein", "jeffrey", "jeevacationgmailcom", "jeeprojectyahoocom", "jeeyacationgmailcom"])
         )
     ).get_column("id")
 )
@@ -71,7 +81,7 @@ jeff_recipient_ids = set(
         pl.col("address_role").is_in(["to_recipients", "cc_recipients", "bcc_recipients"])
         & (
             pl.col("email").is_in(["jeevacation@gmail.com", "jeeproject@yahoo.com", "jeeyacation@gmail.com"])
-            | pl.col("name_key").is_in(["jeffreye", "jeffreyepstein", "jepstein", "jeffrey"])
+            | pl.col("search_key").is_in(["jeffreye", "jeffreyepstein", "jepstein", "jeffrey", "jeevacationgmailcom", "jeeprojectyahoocom", "jeeyacationgmailcom"])
         )
     ).get_column("id")
 )
@@ -135,28 +145,28 @@ search = {
 }
 
 role_is_recipient = pl.col("address_role").is_in(["to_recipients", "cc_recipients", "bcc_recipients"])
-name_counts = addresses.group_by("name_key").len().filter(pl.col("name_key").is_not_null())
+name_counts = addresses.group_by("search_key").len().filter(pl.col("search_key").is_not_null())
 people = []
 
 for target in targets.iter_rows(named=True):
     rules = search[target["name"]]
-    include_match = pl.any_horizontal(*[pl.col("name_key").str.contains(token, literal=True) for token in rules["include"]])
-    exclude_match = pl.any_horizontal(*[pl.col("name_key").str.contains(token, literal=True) for token in rules["exclude"]]) if rules["exclude"] else pl.lit(False)
+    include_match = pl.any_horizontal(*[pl.col("search_key").str.contains(token, literal=True) for token in rules["include"]])
+    exclude_match = pl.any_horizontal(*[pl.col("search_key").str.contains(token, literal=True) for token in rules["exclude"]]) if rules["exclude"] else pl.lit(False)
     candidates = (
         name_counts.filter(include_match & ~exclude_match)
         .sort("len", descending=True)
-        .get_column("name_key")
+        .get_column("search_key")
         .to_list()
     )
     candidates = [key for key in rules["prefer"] if key in candidates] + [key for key in candidates if key not in rules["prefer"]]
     candidates = candidates[:12]
 
     sender_ids_by_key = {
-        key: set(addresses.filter((pl.col("address_role") == "sender") & (pl.col("name_key") == key)).get_column("id"))
+        key: set(addresses.filter((pl.col("address_role") == "sender") & (pl.col("search_key") == key)).get_column("id"))
         for key in candidates
     }
     recipient_ids_by_key = {
-        key: set(addresses.filter(role_is_recipient & (pl.col("name_key") == key)).get_column("id"))
+        key: set(addresses.filter(role_is_recipient & (pl.col("search_key") == key)).get_column("id"))
         for key in candidates
     }
 
