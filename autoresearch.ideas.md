@@ -2,3 +2,4 @@
 - Learn stronger Jeffrey recipient aliases from recipient-side frequency plus sender-email evidence, but require balanced sender/recipient behavior or person-level validation. Even tiny recipient-only expansions improved totals while hurting ratios.
 - Revisit Jeff mailbox-account recovery only with much tighter validation. `account_email_normalized` clearly carries missing-recipient signal, but global use—even gated to zero-recipient-email messages—still distorted ratios.
 - Constrained directional alias search can help Ariane/Lawrence/Kathryn when anchored to the best shared alias core and limited to a tiny number of side-specific extras. It appears stale for Noam/Valeria, and the naive independent version still overfits badly.
+- Search-budget tradeoffs now matter: Lawrence 20 works after caching local extra unions, but Lawrence 21 or Reid 17 time out. Further cap growth likely needs cheaper shared-subset enumeration or compensating cuts elsewhere.

@@ -10,7 +10,11 @@ dependencies = [
     "polars>=1.39.0",
     "spacy>=3.8.11",
     "tqdm>=4.67.0",
-    "torch>=2.10.0", # For MPS
+    # For MPS
+    "beautifulsoup4>=4.14.3",
+    "pydantic>=2.12.5",
+    "spacy>=3.8.13",
+    "torch>=2.11.0",
     "thinc-apple-ops",
 ]
 
