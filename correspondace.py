@@ -119,17 +119,21 @@ search = {
 
 role_is_recipient = pl.col("address_role").is_in(["to_recipients", "cc_recipients", "bcc_recipients"])
 name_counts = addresses.group_by("search_key").len().filter(pl.col("search_key").is_not_null())
-sender_key_stats = (
-    addresses.filter((pl.col("address_role") == "sender") & pl.col("id").is_in(list(jeff_recipient_ids)))
-    .group_by("search_key")
-    .agg(pl.col("id").n_unique().alias("sender_count"))
-)
-recipient_key_stats = (
-    addresses.filter(role_is_recipient & pl.col("id").is_in(list(jeff_sender_ids)))
-    .group_by("search_key")
-    .agg(pl.col("id").n_unique().alias("recipient_count"))
-)
+sender_with_jeff = addresses.filter((pl.col("address_role") == "sender") & pl.col("id").is_in(list(jeff_recipient_ids)))
+recipient_with_jeff = addresses.filter(role_is_recipient & pl.col("id").is_in(list(jeff_sender_ids)))
+sender_key_stats = sender_with_jeff.group_by("search_key").agg(pl.col("id").n_unique().alias("sender_count"))
+recipient_key_stats = recipient_with_jeff.group_by("search_key").agg(pl.col("id").n_unique().alias("recipient_count"))
 key_stats = name_counts.join(sender_key_stats, on="search_key", how="left").join(recipient_key_stats, on="search_key", how="left").fill_null(0)
+sender_ids_by_key_global = {
+    key: set(ids)
+    for key, ids in sender_with_jeff.group_by("search_key").agg(pl.col("id").unique().alias("ids")).iter_rows()
+    if key is not None
+}
+recipient_ids_by_key_global = {
+    key: set(ids)
+    for key, ids in recipient_with_jeff.group_by("search_key").agg(pl.col("id").unique().alias("ids")).iter_rows()
+    if key is not None
+}
 people = []
 
 for target in targets.iter_rows(named=True):
@@ -153,14 +157,8 @@ for target in targets.iter_rows(named=True):
     candidates = [key for key in rules["prefer"] if key in candidates] + [key for key in candidates if key not in rules["prefer"]]
     candidates = candidates[:20] if target["name"] == "Lawrence Krauss" else candidates[:16] if target["name"] == "Reid Hoffman" else candidates[:14] if target["name"] in ["Kathryn Ruemmler", "Ariane de Rothschild", "Noam and Valeria Chomsky", "Bill Gates"] else candidates[:13] if target["name"] == "Elon Musk" else candidates[:12]
 
-    sender_ids_by_key = {
-        key: set(addresses.filter((pl.col("address_role") == "sender") & (pl.col("search_key") == key)).get_column("id"))
-        for key in candidates
-    }
-    recipient_ids_by_key = {
-        key: set(addresses.filter(role_is_recipient & (pl.col("search_key") == key)).get_column("id"))
-        for key in candidates
-    }
+    sender_ids_by_key = {key: sender_ids_by_key_global.get(key, set()) for key in candidates}
+    recipient_ids_by_key = {key: recipient_ids_by_key_global.get(key, set()) for key in candidates}
 
     best_score = None
     best_keys = []
@@ -171,8 +169,8 @@ for target in targets.iter_rows(named=True):
 
     for width in range(1, min(len(candidates), 11 if target["name"] == "Lawrence Krauss" else 10 if target["name"] == "Ariane de Rothschild" else 9) + 1):
         for picked in itertools.combinations(candidates, width):
-            sent = len(set().union(*(sender_ids_by_key[key] for key in picked)) & jeff_recipient_ids)
-            received = len(set().union(*(recipient_ids_by_key[key] for key in picked)) & jeff_sender_ids)
+            sent = len(set().union(*(sender_ids_by_key[key] for key in picked)))
+            received = len(set().union(*(recipient_ids_by_key[key] for key in picked)))
             if received == 0:
                 continue
             ratio = sent / received
@@ -201,10 +199,10 @@ for target in targets.iter_rows(named=True):
                     continue
                 sent_ids = base_sender | sender_extra_ids
                 received_ids = base_recipient | recipient_extra_ids
-                received = len(received_ids & jeff_sender_ids)
+                received = len(received_ids)
                 if received == 0:
                     continue
-                sent = len(sent_ids & jeff_recipient_ids)
+                sent = len(sent_ids)
                 ratio = sent / received
                 total = sent + received
                 score = abs(total - target["total_emails"]) / target["total_emails"] + abs(math.log((ratio + 1e-9) / target["ratio"]))
