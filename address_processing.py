@@ -5,50 +5,47 @@ import polars as pl
 
 
 def normalize_text(expr):
-    expr = expr.fill_null("")
-    for pattern, replacement in [
-        ("&nbsp;", " "),
-        ("&lt;", "<"),
-        ("&gt;", ">"),
-        ("&quot;", '"'),
-        ("&#39;", "'"),
-        ("&amp;", "&"),
-        ("\u00a0", " "),
-        ("\u200b", " "),
-        ("\u2018|\u2019", "'"),
-        ('\u201c|\u201d', '"'),
-        ("\u2039|\u276e|\u3008|\uff1c", "<"),
-        ("\u203a|\u276f|\u3009|\uff1e", ">"),
-        ("\u3010", "["),
-        ("\u3011", "]"),
-        (r"</?(?:u|s|change)>", ""),
-        (r"[\r\n\t]+", " "),
-        (r"\s+", " "),
-    ]:
-        expr = expr.str.replace_all(pattern, replacement)
-    return expr.str.strip_chars().replace("", None)
+    return (
+        expr.fill_null("")
+        .str.replace_many(
+            ["&nbsp;", "&lt;", "&gt;", "&quot;", "&#39;", "&amp;",
+             "\u00a0", "\u200b", "\u2018", "\u2019", "\u201c", "\u201d",
+             "\u2039", "\u276e", "\u3008", "\uff1c",
+             "\u203a", "\u276f", "\u3009", "\uff1e",
+             "\u3010", "\u3011"],
+            [" ", "<", ">", '"', "'", "&",
+             " ", " ", "'", "'", '"', '"',
+             "<", "<", "<", "<",
+             ">", ">", ">", ">",
+             "[", "]"],
+        )
+        .str.replace_all(r"</?(?:u|s|change)>", "")
+        .str.replace_all(r"[\r\n\t]+", " ")
+        .str.replace_all(r"\s+", " ")
+        .str.strip_chars()
+        .replace("", None)
+    )
 
 
 def clean_body(expr):
-    expr = normalize_text(expr)
-    for pattern, replacement in [
-        (r"(?i)https?://\S+", " "),
-        (r"(?i)www\.\S+", " "),
-        (r"(?i)\b(?:view in browser|download now|save now|click here)\b:?", " "),
-        (r"(?i)\b(?:unsubscribe|privacy policy|terms of service|manage preferences)\b", " "),
-        (r"(?i)\b(?:original message|forwarded by|begin forwarded message)\b", " "),
-        (r"(?i)<[^>]+>", " "),
-        (r"(?im)^(from|to|cc|bcc|sent|subject):[^\n]*$", " "),
-        (r"(?im)^[-_]{2,}.*forwarded message.*$", " "),
-        (r"(?im)^this email and any attachments.*$", " "),
-        (r"(?im)^please consider the environment.*$", " "),
-        (r"(?i)\b(?:do you yahoo!?|don'?t pick lemons|citrix sharefile|all rights reserved)\b", " "),
-        (r"[_=~-]{3,}", " "),
-        (r"[<>]{2,}", " "),
-        (r"\s+", " "),
-    ]:
-        expr = expr.str.replace_all(pattern, replacement)
-    return expr.str.strip_chars().replace("", None)
+    return (
+        normalize_text(expr)
+        .str.replace_all(r"(?i)https?://\S+|www\.\S+", " ")
+        .str.replace_all(
+            r"(?i)\b(?:view in browser|download now|save now|click here|unsubscribe|privacy policy|terms of service|manage preferences|original message|forwarded by|begin forwarded message|do you yahoo!?|don'?t pick lemons|citrix sharefile|all rights reserved)\b:?",
+            " ",
+        )
+        .str.replace_all(r"(?i)<[^>]+>", " ")
+        .str.replace_all(r"(?im)^(?:from|to|cc|bcc|sent|subject):[^\n]*$", " ")
+        .str.replace_all(
+            r"(?im)^[-_]{2,}.*forwarded message.*$|^this email and any attachments.*$|^please consider the environment.*$",
+            " ",
+        )
+        .str.replace_all(r"[_=~-]{3,}|[<>]{2,}", " ")
+        .str.replace_all(r"\s+", " ")
+        .str.strip_chars()
+        .replace("", None)
+    )
 
 
 def decoded_list_expr(column):
@@ -120,35 +117,6 @@ def display_name_expr(column):
     return pl.when(cleaned == "").then(None).otherwise(cleaned)
 
 
-def repair_candidate(value):
-    if value is None:
-        return None
-    value = value.lower()
-    for pattern, replacement in [
-        (r"(?i)=40", "@"),
-        (r"(?i)=2e", "."),
-        (r"(?i)=5f", "_"),
-        (r"(?i)=2d", "-"),
-        (r"(?i)=20|=09|=0a|=0d", ""),
-        (r"@grnail\.", "@gmail."),
-        (r"@gmall\.", "@gmail."),
-        (r"@smail\.", "@gmail."),
-        (r"@tmail\.", "@gmail."),
-        (r"\.(?:corn|cord)[a-z]?$", ".com"),
-        (r"\.con$", ".com"),
-        (
-            r"(^|[<\"'\[(])([a-z0-9._%+\-/=]+)(?:§|#)(gmail|googlemail|yahoo|hotmail|outlook|icloud|me|mac|msn|live|gmx|aol|protonmail|ymail|rocketmail)\.",
-            r"\1\2@\3.",
-        ),
-        (
-            r"(^|[<\"'\[(])([a-z0-9._%+\-/=]+)(?:§|#)([a-z0-9-]+\.(?:com|net|org|edu|gov|mil|int|co|io|ai|me|tv|us|uk|ru|fr|de|ch|it|nl|se|no|es|br|ca|mx))\b",
-            r"\1\2@\3",
-        ),
-    ]:
-        value = re.sub(pattern, replacement, value)
-    return value
-
-
 def canonicalize_email(value):
     if value is None or "@" not in value:
         return None
@@ -157,6 +125,50 @@ def canonicalize_email(value):
     if domain == "googlemail.com":
         domain = "gmail.com"
     return f"{local_part.replace('.', '').lower()}@{domain}"
+
+
+def canonicalize_email_expr(expr):
+    local = expr.str.extract(r"^(.*)@[^@]*$", 1)
+    domain = expr.str.extract(r"@([^@]*)$", 1).str.to_lowercase()
+    domain = pl.when(domain == "googlemail.com").then(pl.lit("gmail.com")).otherwise(domain)
+    return (
+        pl.when(expr.is_not_null() & expr.str.contains("@", literal=True))
+        .then(local.str.to_lowercase().str.replace_all(".", "", literal=True) + pl.lit("@") + domain)
+        .otherwise(None)
+    )
+
+
+def normalize_person_name_expr(expr):
+    return (
+        expr.fill_null("")
+        .str.to_lowercase()
+        .str.replace_many(["&nbsp;", "&#39;", "&quot;", "&amp;"], [" ", " ", " ", " "])
+        .str.replace_all("[\u2019']", "")
+        .str.replace_all(r"[^a-z0-9]+", " ")
+        .str.replace_all(r"\s+", " ")
+        .str.strip_chars()
+        .replace("", None)
+    )
+
+
+def repair_candidate_expr(expr):
+    return (
+        expr.str.to_lowercase()
+        .str.replace_many(
+            ["=40", "=2e", "=5f", "=2d", "=20", "=09", "=0a", "=0d"],
+            ["@", ".", "_", "-", "", "", "", ""],
+        )
+        .str.replace_all(
+            r"(^|[<\"'\[(])([a-z0-9._%+\-/=]+)(?:§|#)(gmail|googlemail|yahoo|hotmail|outlook|icloud|me|mac|msn|live|gmx|aol|protonmail|ymail|rocketmail)\.",
+            "${1}${2}@${3}.",
+        )
+        .str.replace_all(
+            r"(^|[<\"'\[(])([a-z0-9._%+\-/=]+)(?:§|#)([a-z0-9-]+\.(?:com|net|org|edu|gov|mil|int|co|io|ai|me|tv|us|uk|ru|fr|de|ch|it|nl|se|no|es|br|ca|mx))\b",
+            "${1}${2}@${3}",
+        )
+        .str.replace_all(r"@(?:grnail|gmall|smail|tmail)\.", "@gmail.")
+        .str.replace_all(r"\.(?:corn|cord)[a-z]?$|\.con$", ".com")
+    )
 
 
 def scalar_address_rows(frame):
@@ -219,14 +231,7 @@ def fuzzy_repair_emails(frame):
         .len()
         .filter(pl.col("len") >= 2)
     )
-    candidates_by_domain = {}
-    for row in known.iter_rows(named=True):
-        domain = "gmail.com" if row["domain"] == "googlemail.com" else row["domain"]
-        candidates_by_domain.setdefault(domain, []).append(
-            (re.sub(r"[^a-z0-9]", "", row["local_part"]), row["email"], row["len"])
-        )
 
-    repaired_rows = []
     suspicious = frame.filter(
         pl.col("email").is_null()
         & pl.col("normalized_value").is_not_null()
@@ -234,29 +239,41 @@ def fuzzy_repair_emails(frame):
         .str.to_lowercase()
         .str.contains(r"§|#|=|grnail|gmall|smail|tmail|corn|cord|\.con\b")
     )
-    email_regex = re.compile(
-        r"([A-Za-z0-9](?:[A-Za-z0-9._%+\-/=]*[A-Za-z0-9])?@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})"
+
+    if suspicious.height == 0:
+        return frame
+
+    with_candidate = suspicious.with_columns(
+        repair_candidate_expr(pl.col("normalized_value")).alias("candidate")
     )
-    for row in suspicious.iter_rows(named=True):
-        candidate = repair_candidate(row["normalized_value"])
+    direct = with_candidate.with_columns(
+        canonicalize_email_expr(
+            pl.col("candidate").str.extract(
+                r"""(?:^|[<"'(\[ \t])([A-Za-z0-9](?:[A-Za-z0-9._%+\-/=]*[A-Za-z0-9])?@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})(?:$|[>"')\] \t,;])""",
+                1,
+            )
+        ).alias("email_repaired")
+    )
+
+    direct_repairs = (
+        direct.filter(pl.col("email_repaired").is_not_null())
+        .select("id", "address_role", "address_index", "email_repaired")
+    )
+
+    needs_fuzzy = direct.filter(pl.col("email_repaired").is_null())
+
+    candidates_by_domain = {}
+    for row in known.iter_rows(named=True):
+        domain = "gmail.com" if row["domain"] == "googlemail.com" else row["domain"]
+        candidates_by_domain.setdefault(domain, []).append(
+            (re.sub(r"[^a-z0-9]", "", row["local_part"]), row["email"], row["len"])
+        )
+
+    fuzzy_rows = []
+    for row in needs_fuzzy.iter_rows(named=True):
+        candidate = row["candidate"]
         if candidate is None:
             continue
-        match = email_regex.search(candidate)
-        if match is not None:
-            repaired = canonicalize_email(match.group(1))
-            start, end = match.span(1)
-            left_ok = start == 0 or candidate[start - 1] in {'<', '"', "'", "(", "[", " ", "\t"}
-            right_ok = end == len(candidate) or candidate[end] in {'>', '"', "'", ")", "]", " ", "\t", ",", ";"}
-            if repaired is not None and left_ok and right_ok:
-                repaired_rows.append(
-                    {
-                        "id": row["id"],
-                        "address_role": row["address_role"],
-                        "address_index": row["address_index"],
-                        "email_repaired": repaired,
-                    }
-                )
-                continue
 
         domain_match = re.search(
             r"(gmail\.com|googlemail\.com|yahoo\.com|hotmail\.com|outlook\.com|icloud\.com|me\.com|mac\.com|msn\.com|live\.com|gmx\.com|aol\.com|protonmail\.com|ymail\.com|rocketmail\.com)",
@@ -290,7 +307,7 @@ def fuzzy_repair_emails(frame):
             continue
         if best_score < 0.995 and best_score - second_score < 0.08:
             continue
-        repaired_rows.append(
+        fuzzy_rows.append(
             {
                 "id": row["id"],
                 "address_role": row["address_role"],
@@ -299,14 +316,19 @@ def fuzzy_repair_emails(frame):
             }
         )
 
-    if not repaired_rows:
+    if fuzzy_rows:
+        repaired_rows = pl.concat(
+            [direct_repairs, pl.DataFrame(fuzzy_rows)],
+            how="diagonal_relaxed",
+        )
+    elif direct_repairs.height > 0:
+        repaired_rows = direct_repairs
+    else:
         return frame
 
     return (
         frame.join(
-            pl.DataFrame(repaired_rows).unique(
-                subset=["id", "address_role", "address_index"], keep="first"
-            ),
+            repaired_rows.unique(subset=["id", "address_role", "address_index"], keep="first"),
             on=["id", "address_role", "address_index"],
             how="left",
         )
