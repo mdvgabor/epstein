@@ -17,7 +17,7 @@ print(perf_counter())
 PY
 )
 
-PREPROCESS_SAMPLE_ROWS=100000 PREPROCESS_OUT_DIR="$out_dir" uv run python preprocess.py >/tmp/preprocess_autoresearch.log 2>&1
+PREPROCESS_SAMPLE_ROWS="${PREPROCESS_SAMPLE_ROWS:-100000}" PREPROCESS_SAMPLE_SEED="${PREPROCESS_SAMPLE_SEED:-42}" PREPROCESS_OUT_DIR="$out_dir" uv run python preprocess.py >/tmp/preprocess_autoresearch.log 2>&1
 status=$?
 end=$(uv run python - <<'PY'
 from time import perf_counter
