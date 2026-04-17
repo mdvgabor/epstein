@@ -9,6 +9,12 @@ wheels/
 # Virtual environments
 .venv
 data
+!data/
+data/*
+!data/fact_emails.parquet
+!data/bridge_email_people.parquet
+!data/dim_people.parquet
+models
 .ruff_cache
 !data/famous_correspondents.csv
 !data/people.csv
