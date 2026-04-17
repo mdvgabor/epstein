@@ -20,7 +20,6 @@ def normalize_text(expr):
              "[", "]"],
         )
         .str.replace_all(r"</?(?:u|s|change)>", "")
-        .str.replace_all(r"[\r\n\t]+", " ")
         .str.replace_all(r"\s+", " ")
         .str.strip_chars()
         .replace("", None)
@@ -29,18 +28,36 @@ def normalize_text(expr):
 
 def clean_body(expr):
     return (
-        normalize_text(expr)
+        normalize_text(
+            expr.fill_null("")
+            .str.replace_all(r"(?im)^(?:from|to|cc|bcc|sent|subject):[^\n]*$", " ")
+            .str.replace_all(
+                r"(?im)^[-_]{2,}.*forwarded message.*$|^this email and any attachments.*$|^please consider the environment.*$",
+                " ",
+            )
+        )
         .str.replace_all(r"(?i)https?://\S+|www\.\S+", " ")
-        .str.replace_all(
-            r"(?i)\b(?:view in browser|download now|save now|click here|unsubscribe|privacy policy|terms of service|manage preferences|original message|forwarded by|begin forwarded message|do you yahoo!?|don'?t pick lemons|citrix sharefile|all rights reserved)\b:?",
-            " ",
+        .str.replace_many(
+            {
+                "view in browser": " ",
+                "download now": " ",
+                "save now": " ",
+                "click here": " ",
+                "unsubscribe": " ",
+                "privacy policy": " ",
+                "terms of service": " ",
+                "manage preferences": " ",
+                "original message": " ",
+                "forwarded by": " ",
+                "begin forwarded message": " ",
+                "do you yahoo!?": " ",
+                "don't pick lemons": " ",
+                "citrix sharefile": " ",
+                "all rights reserved": " ",
+            },
+            ascii_case_insensitive=True,
         )
         .str.replace_all(r"(?i)<[^>]+>", " ")
-        .str.replace_all(r"(?im)^(?:from|to|cc|bcc|sent|subject):[^\n]*$", " ")
-        .str.replace_all(
-            r"(?im)^[-_]{2,}.*forwarded message.*$|^this email and any attachments.*$|^please consider the environment.*$",
-            " ",
-        )
         .str.replace_all(r"[_=~-]{3,}|[<>]{2,}", " ")
         .str.replace_all(r"\s+", " ")
         .str.strip_chars()
@@ -57,13 +74,12 @@ def normalized_list_expr(column):
 
 
 def email_expr(column):
-    extracted = pl.col(column).str.to_lowercase()
+    extracted = (
+        pl.col(column)
+        .str.to_lowercase()
+        .str.replace_many(["=40", "=2e", "=5f", "=2d", "=20", "=09", "=0a", "=0d"], ["@", ".", "_", "-", "", "", "", ""])
+    )
     for pattern, replacement in [
-        (r"(?i)=40", "@"),
-        (r"(?i)=2e", "."),
-        (r"(?i)=5f", "_"),
-        (r"(?i)=2d", "-"),
-        (r"(?i)=20|=09|=0a|=0d", ""),
         (
             r"(^|[<\"'\[(])([a-z0-9._%+\-/=]+)(?:§|#)(gmail|googlemail|yahoo|hotmail|outlook|icloud|me|mac|msn|live|gmx|aol|protonmail|ymail|rocketmail)\.",
             "${1}${2}@${3}.",
@@ -78,11 +94,11 @@ def email_expr(column):
         r"([A-Za-z0-9](?:[A-Za-z0-9._%+\-/=]*[A-Za-z0-9])?@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})",
         1,
     )
+    extracted = extracted.str.replace_many(
+        ["@grnail.", "@gmall.", "@smail.", "@tmail."],
+        ["@gmail.", "@gmail.", "@gmail.", "@gmail."],
+    )
     for pattern, replacement in [
-        (r"@grnail\.", "@gmail."),
-        (r"@gmall\.", "@gmail."),
-        (r"@smail\.", "@gmail."),
-        (r"@tmail\.", "@gmail."),
         (r"\.(?:corn|cord)[a-z]?$", ".com"),
         (r"\.con$", ".com"),
     ]:
@@ -110,7 +126,7 @@ def display_name_expr(column):
             " ",
         )
         .str.replace_all(r"[<>\[\]\(\)\"]", " ")
-        .str.replace_all("'", " ")
+        .str.replace_all("'", " ", literal=True)
         .str.replace_all(r"\s+", " ")
         .str.replace_all(r"^[,;:\-\s]+|[,;:\-\s]+$", "")
     )
@@ -210,12 +226,11 @@ def recipient_address_rows(frame):
 def build_address_table(frame):
     return (
         pl.concat([scalar_address_rows(frame), recipient_address_rows(frame)], how="diagonal_relaxed")
+        .filter(pl.col("normalized_value").is_not_null())
         .with_columns(
-            normalize_text(pl.col("raw_value")).alias("raw_value"),
             email_expr("normalized_value").alias("email"),
             display_name_expr("normalized_value").alias("display_name"),
         )
-        .filter(pl.col("normalized_value").is_not_null())
         .select("id", "address_role", "address_index", "raw_value", "normalized_value", "display_name", "email")
     )
 
