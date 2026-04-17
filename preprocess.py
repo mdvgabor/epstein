@@ -152,13 +152,15 @@ def human_display_name_expr(expr):
     return (
         expr.is_not_null()
         & expr.str.contains("@", literal=True).not_()
+        & expr.str.contains("&", literal=True).not_()
         & name_key.is_not_null()
         & (name_key.str.split(" ").list.len() >= 2)
         & name_key.str.contains(
-            r"\b(?:mail|mailto|mailer|delivery|subsystem|daemon|system|batch|list|newsletter|notification|updates?|support|admin|office|service|services|team|group|department|valuations|control|oversight|banking|middle|customer|client|alert|alerts|times|worldwide|reservation|reservations|online|university|college|school|etl|pwm|crm|derivatives|travel|bank|capital|fund|funds|llp|llc|inc|ltd|corp|corporation|company|clientservices|sharefile|nytimes|vacation|scanner|linkedin|jobs|dbgps|news|brief|breaking|digest|editorial|editor|feed|post|posts|press|daily|beast|flipboard|smartbrief|reuters|calendar|security|assurant|protect|mobile|alerts?)\b"
+            r"\b(?:mail|mailto|mailer|delivery|subsystem|daemon|system|batch|list|newsletter|notification|updates?|support|admin|office|service|services|team|group|department|valuations|control|oversight|banking|middle|customer|client|alert|alerts|times|worldwide|reservation|reservations|online|university|college|school|etl|pwm|crm|derivatives|travel|bank|capital|fund|funds|llp|llc|inc|ltd|corp|corporation|company|clientservices|sharefile|nytimes|vacation|scanner|linkedin|jobs|dbgps|news|brief|breaking|digest|editorial|editor|feed|post|posts|press|daily|beast|flipboard|smartbrief|reuters|calendar|security|assurant|protect|mobile|alerts?|staff|branch)\b"
         ).not_()
         & name_key.str.contains(r"\b(?:from|subject|re|fw|fwd|forwarded|message|original)\b").not_()
         & name_key.str.contains(r"[0-9]").not_()
+        & name_key.str.contains(r"&").not_()
     )
 
 
