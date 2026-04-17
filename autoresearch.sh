@@ -41,12 +41,13 @@ out_dir = Path('data/preprocess_autoresearch')
 df = pl.read_parquet(out_dir / 'dim_people.parquet')
 discovered = df.filter(pl.col('person_id').str.starts_with('discovered-email-'))
 low = pl.col('person_name').str.to_lowercase()
-patterns = r'\b(news|breaking|update|digest|alert|newsletter|calendar|security|support|service|office|staff|team|group|mail|reply|noreply|notification|welcome|unsubscribe|assurant|protect|brief|post|times|postmaster|daemon|admin|marketing|sales|billing|payments|travel|reservation|reservations|bank|portal|home|mobile|security)\b'
+patterns = r'\b(news|breaking|update|digest|alert|newsletter|calendar|security|support|service|office|staff|team|group|mail|reply|noreply|notification|welcome|unsubscribe|assurant|protect|brief|post|times|postmaster|daemon|admin|marketing|sales|billing|payments|travel|reservation|reservations|bank|portal|home|mobile|recommends|radio|signal|management)\b'
 junk = discovered.filter(
     low.str.contains(patterns) |
     pl.col('person_name').str.contains(r'[0-9]') |
     pl.col('person_name').str.contains(r'&|/|:|;|\||@|<|>') |
-    pl.col('person_name').str.contains(r'(?i)\b(from|subject|re|fw|fwd|sent|to|cc|bcc|original message|forwarded|begin forwarded message)\b')
+    pl.col('person_name').str.contains(r'(?i)\b(from|subject|re|fw|fwd|sent|to|cc|bcc|original message|forwarded|begin forwarded message)\b') |
+    pl.col('person_name').str.contains(r'(?i),.*\band\b.*,')
 )
 print(f'METRIC junk_people={junk.height}')
 print(f'METRIC discovered_people={discovered.height}')

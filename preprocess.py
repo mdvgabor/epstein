@@ -161,7 +161,7 @@ def human_display_name_expr(expr):
         & first.str.len_chars().fill_null(0).ge(2)
         & last.str.len_chars().fill_null(0).ge(2)
         & name_key.str.contains(
-            r"\b(?:mail|mailto|mailer|delivery|subsystem|daemon|system|batch|list|newsletter|notification|updates?|support|admin|office|service|services|team|group|department|valuations|control|oversight|banking|middle|customer|client|alert|alerts|times|worldwide|reservation|reservations|online|university|college|school|etl|pwm|crm|derivatives|travel|bank|capital|fund|funds|llp|llc|inc|ltd|corp|corporation|company|clientservices|sharefile|nytimes|vacation|scanner|linkedin|jobs|dbgps|news|brief|breaking|digest|editorial|editor|feed|post|posts|press|daily|beast|flipboard|smartbrief|reuters|calendar|security|assurant|protect|mobile|alerts?|staff|branch)\b"
+            r"\b(?:mail|mailto|mailer|delivery|subsystem|daemon|system|batch|list|newsletter|notification|updates?|support|admin|office|service|services|team|group|department|valuations|control|oversight|banking|middle|customer|client|alert|alerts|times|worldwide|reservation|reservations|online|university|college|school|etl|pwm|crm|derivatives|travel|bank|capital|fund|funds|llp|llc|inc|ltd|corp|corporation|company|clientservices|sharefile|nytimes|vacation|scanner|linkedin|jobs|dbgps|news|brief|breaking|digest|editorial|editor|feed|post|posts|press|daily|beast|flipboard|smartbrief|reuters|calendar|security|assurant|protect|mobile|alerts?|staff|branch|recommends|radio|signal|management|models)\b"
         ).not_()
         & name_key.str.contains(r"\b(?:from|subject|re|fw|fwd|forwarded|message|original)\b").not_()
         & name_key.str.contains(r"[0-9]").not_()
