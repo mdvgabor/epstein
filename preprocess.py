@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+import re
+from time import perf_counter
 
 import polars as pl
 
@@ -13,25 +15,225 @@ from address_processing import (
     normalize_text,
 )
 
-out_dir = Path("data")
-out_dir.mkdir(exist_ok=True)
+input_dir = Path("data")
+out_dir = Path(os.environ.get("PREPROCESS_OUT_DIR", input_dir.as_posix()))
+out_dir.mkdir(parents=True, exist_ok=True)
+sample_rows = int(os.environ.get("PREPROCESS_SAMPLE_ROWS", "0") or "0")
+profile_started_at = perf_counter()
+profile_last_at = profile_started_at
 
 
-def unique_person_key_table(keyed, key_column):
-    table = keyed.filter(pl.col(key_column).is_not_null())
-    return (
-        table.join(
-            table.group_by(key_column).len().filter(pl.col("len") == 1).select(key_column),
-            on=key_column,
-            how="inner",
-        )
-        .select(key_column, "person_id", "person_name")
+def log_phase(label):
+    global profile_last_at
+    now = perf_counter()
+    print(f"[profile] {label}: phase={now - profile_last_at:.2f}s total={now - profile_started_at:.2f}s", flush=True)
+    profile_last_at = now
+
+
+def person_name_key_exprs(expr):
+    normalized = normalize_person_name_expr(expr)
+    tokens = normalized.str.split(" ")
+    first = tokens.list.first()
+    last = tokens.list.last()
+    return [
+        normalized.alias("name_key_full"),
+        normalized.str.replace_all(" ", "", literal=True).alias("name_key_compact"),
+        pl.when(tokens.list.len() >= 2)
+        .then(first + pl.lit(" ") + last.str.slice(0, 1))
+        .otherwise(None)
+        .alias("name_key_first_last_initial"),
+        pl.when(tokens.list.len() >= 2)
+        .then(first.str.slice(0, 1) + pl.lit(" ") + last)
+        .otherwise(None)
+        .alias("name_key_initial_last"),
+        pl.when((tokens.list.len() >= 2) & (last.str.len_chars() >= 3))
+        .then(first.str.slice(0, 1) + pl.lit(" ") + last.str.slice(0, 3))
+        .otherwise(None)
+        .alias("name_key_initial_last_prefix"),
+    ]
+
+
+def name_match_label_expr():
+    return pl.col("name_key_type").replace(
+        {
+            "name_key_full": "display_name_full",
+            "name_key_compact": "display_name_compact",
+            "name_key_first_last_initial": "display_name_first_last_initial",
+            "name_key_initial_last": "display_name_initial_last",
+            "name_key_initial_last_prefix": "display_name_initial_last_prefix",
+        }
     )
 
 
+def name_match_priority_expr():
+    return (
+        pl.when(pl.col("match_source") == "display_name_full")
+        .then(pl.lit(0, dtype=pl.UInt8))
+        .when(pl.col("match_source") == "display_name_compact")
+        .then(pl.lit(1, dtype=pl.UInt8))
+        .when(pl.col("match_source") == "display_name_first_last_initial")
+        .then(pl.lit(2, dtype=pl.UInt8))
+        .when(pl.col("match_source") == "display_name_initial_last")
+        .then(pl.lit(3, dtype=pl.UInt8))
+        .when(pl.col("match_source") == "display_name_initial_last_prefix")
+        .then(pl.lit(4, dtype=pl.UInt8))
+        .otherwise(None)
+    )
+
+
+def long_name_keys(frame, index):
+    return (
+        frame.unpivot(
+            index=index,
+            on=[
+                "name_key_full",
+                "name_key_compact",
+                "name_key_first_last_initial",
+                "name_key_initial_last",
+                "name_key_initial_last_prefix",
+            ],
+            variable_name="name_key_type",
+            value_name="person_name_key",
+        )
+        .filter(pl.col("person_name_key").is_not_null())
+        .with_columns(name_match_label_expr().alias("match_source"))
+        .drop("name_key_type")
+    )
+
+
+def unique_person_name_matches(people_frame):
+    keyed = people_frame.with_columns(*person_name_key_exprs(pl.col("person_name")))
+    long = long_name_keys(keyed, ["person_id", "person_name"])
+    return (
+        long.join(
+            long.group_by("match_source", "person_name_key").len().filter(pl.col("len") == 1).select(
+                "match_source", "person_name_key"
+            ),
+            on=["match_source", "person_name_key"],
+            how="inner",
+        )
+        .with_columns(name_match_priority_expr().alias("match_priority"))
+        .select("match_source", "match_priority", "person_name_key", "person_id", "person_name")
+    )
+
+
+def add_display_name_matches(participants, name_matches):
+    participant_columns = participants.columns
+    keyed = participants.with_row_index("participant_row").with_columns(
+        *person_name_key_exprs(pl.col("display_name"))
+    )
+    best_matches = (
+        long_name_keys(keyed, "participant_row")
+        .join(name_matches, on=["match_source", "person_name_key"], how="inner")
+        .sort("participant_row", "match_priority")
+        .unique(subset=["participant_row"], keep="first", maintain_order=True)
+        .select(
+            "participant_row",
+            pl.col("person_id").alias("person_id_name"),
+            pl.col("person_name").alias("person_name_name"),
+            pl.col("match_source").alias("match_source_name"),
+        )
+    )
+    return (
+        keyed.select("participant_row", *participant_columns)
+        .join(best_matches, on="participant_row", how="left")
+        .drop("participant_row")
+    )
+
+
+def machine_email_expr(expr):
+    return expr.fill_null("").str.to_lowercase().str.contains(
+        r"^(?:no-?reply|noreply|donotreply|do-?not-?reply|news|newsletter|updates?|notifications?|hello|info|support|mailer|mail|admin|contact|marketing|sales|editor|alerts?|mailer-daemon|postmaster)@|^[a-z0-9._%+\-]*(?:batch|daemon|notification|newsletter|bounce|system)[a-z0-9._%+\-]*@|@list\.|@[^@]*\.list\.|@(?:lists|newsletter|notifications?)\."
+    )
+
+
+def human_display_name_expr(expr):
+    name_key = normalize_person_name_expr(expr)
+    return (
+        expr.is_not_null()
+        & expr.str.contains("@", literal=True).not_()
+        & name_key.is_not_null()
+        & (name_key.str.split(" ").list.len() >= 2)
+        & name_key.str.contains(
+            r"\b(?:mail|mailto|mailer|delivery|subsystem|daemon|system|batch|list|newsletter|notification|updates|support|admin|office|service|services|team|group|department|valuations|control|oversight|banking|middle|customer|client|alert|alerts|times|worldwide|reservation|reservations|online|university|college|school|etl|pwm|crm|derivatives|travel|bank|capital|fund|funds|llc|inc|ltd|corp|corporation|company|clientservices|sharefile|nytimes|vacation|scanner|linkedin|jobs|dbgps)\b"
+        ).not_()
+    )
+
+
+people = pl.read_csv(input_dir / "jmail_people.csv").select(
+    pl.col("slug").alias("person_id"),
+    pl.col("name").alias("person_name"),
+    "description",
+)
+people_with_counts = pl.read_csv(input_dir / "jmail_people.csv").select(
+    pl.col("slug").alias("person_id"),
+    pl.col("name").alias("person_name"),
+    "email_count",
+)
+
+seed_path = input_dir / "person_email_seed.csv"
+if not seed_path.exists():
+    pl.DataFrame(
+        {
+            "person_id": ["jeffrey-epstein", "jeffrey-epstein"],
+            "email": ["jeeproject@yahoo.com", "jeevacation@gmail.com"],
+        }
+    ).write_csv(seed_path)
+
+seed_emails = (
+    pl.read_csv(seed_path)
+    .select("person_id", canonicalize_email_expr(pl.col("email")).alias("email"))
+    .filter(pl.col("person_id").is_not_null() & pl.col("email").is_not_null())
+    .unique(subset=["person_id", "email"], keep="first")
+    .join(people.select("person_id", "person_name"), on="person_id", how="inner")
+    .with_columns(pl.lit("seed_email").alias("alias_source"))
+)
+
+missing_people = (
+    pl.read_csv(seed_path)
+    .select("person_id")
+    .filter(pl.col("person_id").is_not_null())
+    .unique()
+    .join(people.select("person_id"), on="person_id", how="anti")
+)
+if missing_people.height > 0:
+    raise ValueError(f"Unknown person_id values in {seed_path}: {missing_people['person_id'].to_list()}")
+
+conflicting_seed_emails = (
+    seed_emails.group_by("email")
+    .agg(pl.col("person_id").n_unique().alias("person_count"))
+    .filter(pl.col("person_count") > 1)
+)
+if conflicting_seed_emails.height > 0:
+    conflicts = (
+        seed_emails.join(conflicting_seed_emails.select("email"), on="email", how="inner")
+        .sort("email", "person_id")
+        .select("email", "person_id")
+        .iter_rows()
+    )
+    raise ValueError(f"Conflicting email assignments in {seed_path}: {list(conflicts)}")
+
+person_name_matches = unique_person_name_matches(people)
+people_last_names = (
+    people.with_columns(normalize_person_name_expr(pl.col("person_name")).str.split(" ").list.last().alias("last_name"))
+    .filter(pl.col("last_name").is_not_null() & (pl.col("last_name").str.len_chars() >= 5))
+)
+unique_last_names = (
+    people_last_names.group_by("last_name")
+    .agg(pl.col("person_id").n_unique().alias("person_count"))
+    .filter(pl.col("person_count") == 1)
+    .join(people_last_names.select("person_id", "person_name", "last_name"), on="last_name", how="inner")
+    .select("person_id", "person_name", "last_name")
+)
+log_phase("load people metadata")
+
+email_scan = pl.scan_parquet(input_dir / "emails.parquet").filter(pl.col("is_promotional").fill_null(False).not_())
+if sample_rows > 0:
+    email_scan = email_scan.head(sample_rows)
+    print(f"[profile] sample mode: reading first {sample_rows:,} non-promotional emails", flush=True)
+
 base = (
-    pl.scan_parquet("data/emails.parquet")
-    .with_row_index("row_nr")
+    email_scan
     .with_columns(
         pl.col("is_promotional").fill_null(False).alias("is_promotional"),
         pl.col("sender").alias("sender_raw"),
@@ -43,13 +245,7 @@ base = (
         normalize_text(pl.col("account_email")).alias("account_email_normalized"),
         *[decoded_list_expr(role).alias(f"{role}_items") for role in ["to_recipients", "cc_recipients", "bcc_recipients"]],
         clean_body(pl.col("content_markdown")).alias("body_clean"),
-        pl.coalesce(
-            pl.col("sent_at").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S%.fZ", strict=False),
-            pl.col("sent_at").str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S", strict=False),
-            pl.col("sent_at").str.strptime(pl.Datetime, "%Y-%m-%d", strict=False),
-            pl.col("sent_at").str.strptime(pl.Datetime, "%m/%d/%Y %H:%M", strict=False),
-            pl.col("sent_at").str.strptime(pl.Datetime, "%m/%d/%Y", strict=False),
-        ).alias("sent_at_parsed"),
+        pl.col("sent_at").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S%.fZ", strict=False).alias("sent_at"),
     )
     .with_columns(
         *[
@@ -70,24 +266,18 @@ base = (
     .with_columns(
         pl.col("text_clean").str.len_chars().fill_null(0).alias("text_char_len"),
         pl.col("text_clean").str.count_matches(r"\b[\p{L}\p{N}']+\b").fill_null(0).alias("text_token_len"),
-        pl.col("body_clean").str.contains(r"(?i)(http://|https://|www\.)").fill_null(False).alias("still_has_url"),
-        pl.col("body_clean").str.contains(r"</?(?:u|s|change)>").fill_null(False).alias("still_has_ocr_markup"),
         pl.col("sender_raw")
         .fill_null("")
         .str.to_lowercase()
         .str.contains(r"redacted|█")
         .alias("sender_redacted"),
-        pl.col("sent_at_parsed").dt.year().alias("year"),
+        pl.col("sent_at").dt.year().alias("year"),
     )
     .with_columns(
         pl.when(pl.col("year").is_between(1990, 2019, closed="both"))
         .then(pl.col("year"))
         .otherwise(None)
-        .alias("year_valid"),
-        pl.when(pl.col("sent_at_parsed").is_not_null() & pl.col("year").is_between(1990, 2019, closed="both"))
-        .then(pl.col("sent_at_parsed"))
-        .otherwise(None)
-        .alias("sent_at_valid"),
+        .alias("year"),
         (
             pl.col("id").cast(pl.String).fill_null("")
             + pl.lit("||")
@@ -95,256 +285,20 @@ base = (
             + pl.lit("||")
             + pl.col("subject_clean").fill_null("")
             + pl.lit("||")
-            + pl.col("sent_at").fill_null("")
+            + pl.col("sent_at").cast(pl.String).fill_null("")
             + pl.lit("||")
             + pl.col("text_clean").fill_null("").str.slice(0, 500)
         ).alias("duplicate_signature"),
     )
 )
 
-processed = (
-    base.filter(pl.col("is_promotional").not_())
-    .with_columns(
-        pl.col("text_char_len").lt(80).alias("too_short"),
-        pl.col("sent_at_valid").is_null().alias("invalid_date"),
+processed = base.collect()
+log_phase("base collect")
+
+fact_emails = (
+    processed.with_columns(
         pl.col("duplicate_signature").is_duplicated().alias("duplicate_signature_flag"),
         pl.col("id").is_duplicated().alias("duplicate_id_flag"),
-    )
-    .collect(engine=os.getenv("POLARS_ENGINE_AFFINITY", "auto"))
-)
-
-person_emails = (
-    pl.read_csv(out_dir / "jmail_person_emails.csv")
-    .select(
-        pl.col("slug").alias("person_id"),
-        pl.col("name").alias("person_name"),
-        pl.col("email").alias("matched_alias_email"),
-        canonicalize_email_expr(pl.col("email")).alias("email"),
-    )
-    .filter(pl.col("email").is_not_null())
-    .unique(subset=["person_id", "email"], keep="first")
-)
-person_emails = person_emails.join(
-    person_emails.group_by("email").len().filter(pl.col("len") == 1).select("email"),
-    on="email",
-    how="inner",
-)
-
-people = pl.read_csv(out_dir / "jmail_people.csv").select(
-    pl.col("slug").alias("person_id"),
-    pl.col("name").alias("person_name"),
-)
-
-# Pre-compute all name keys on the people table
-_name_norm = normalize_person_name_expr(pl.col("person_name"))
-_name_tokens = _name_norm.str.split(" ")
-_first_tok = _name_tokens.list.first()
-_last_tok = _name_tokens.list.last()
-
-people_keyed = people.with_columns(
-    _name_norm.alias("person_name_full_key"),
-    _name_norm.str.replace_all(" ", "", literal=True).alias("person_name_compact_key"),
-    pl.when(_name_tokens.list.len() >= 2)
-    .then(_first_tok + pl.lit(" ") + _last_tok.str.slice(0, 1))
-    .otherwise(None)
-    .alias("person_name_first_last_initial_key"),
-    pl.when(_name_tokens.list.len() >= 2)
-    .then(_first_tok.str.slice(0, 1) + pl.lit(" ") + _last_tok)
-    .otherwise(None)
-    .alias("person_name_initial_last_key"),
-    pl.when((_name_tokens.list.len() >= 2) & (_last_tok.str.len_chars() >= 3))
-    .then(_first_tok.str.slice(0, 1) + pl.lit(" ") + _last_tok.str.slice(0, 3))
-    .otherwise(None)
-    .alias("person_name_initial_last_prefix_key"),
-)
-
-person_names_full = unique_person_key_table(people_keyed, "person_name_full_key")
-person_names_compact = unique_person_key_table(people_keyed, "person_name_compact_key")
-person_names_first_last_initial = unique_person_key_table(people_keyed, "person_name_first_last_initial_key")
-person_names_initial_last = unique_person_key_table(people_keyed, "person_name_initial_last_key")
-person_names_initial_last_prefix = unique_person_key_table(people_keyed, "person_name_initial_last_prefix_key")
-
-addresses_before = build_address_table(processed)
-
-# Compute name keys on addresses: normalize once, tokenize once, derive all keys
-_addr_name_norm = normalize_person_name_expr(pl.col("display_name"))
-_addr_tokens = _addr_name_norm.str.split(" ")
-_addr_first = _addr_tokens.list.first()
-_addr_last = _addr_tokens.list.last()
-
-addresses_after = (
-    fuzzy_repair_emails(addresses_before)
-    .with_columns(
-        canonicalize_email_expr(pl.col("email")),
-        _addr_name_norm.alias("person_name_full_key"),
-    )
-    .with_columns(
-        pl.col("person_name_full_key").str.replace_all(" ", "", literal=True).alias("person_name_compact_key"),
-        pl.col("person_name_full_key").str.split(" ").alias("_name_tokens"),
-    )
-    .with_columns(
-        pl.when(pl.col("_name_tokens").list.len() >= 2)
-        .then(pl.col("_name_tokens").list.first() + pl.lit(" ") + pl.col("_name_tokens").list.last().str.slice(0, 1))
-        .otherwise(None)
-        .alias("person_name_first_last_initial_key"),
-        pl.when(pl.col("_name_tokens").list.len() >= 2)
-        .then(pl.col("_name_tokens").list.first().str.slice(0, 1) + pl.lit(" ") + pl.col("_name_tokens").list.last())
-        .otherwise(None)
-        .alias("person_name_initial_last_key"),
-        pl.when((pl.col("_name_tokens").list.len() >= 2) & (pl.col("_name_tokens").list.last().str.len_chars() >= 3))
-        .then(pl.col("_name_tokens").list.first().str.slice(0, 1) + pl.lit(" ") + pl.col("_name_tokens").list.last().str.slice(0, 3))
-        .otherwise(None)
-        .alias("person_name_initial_last_prefix_key"),
-    )
-    .drop("_name_tokens")
-    .join(
-        person_emails.rename(
-            {
-                "person_id": "person_id_email",
-                "person_name": "person_name_email",
-            }
-        ),
-        on="email",
-        how="left",
-    )
-    .join(
-        person_names_full.rename(
-            {
-                "person_id": "person_id_name_full",
-                "person_name": "person_name_name_full",
-            }
-        ),
-        on="person_name_full_key",
-        how="left",
-    )
-    .join(
-        person_names_compact.rename(
-            {
-                "person_id": "person_id_name_compact",
-                "person_name": "person_name_name_compact",
-            }
-        ),
-        on="person_name_compact_key",
-        how="left",
-    )
-    .join(
-        person_names_first_last_initial.rename(
-            {
-                "person_id": "person_id_name_first_last_initial",
-                "person_name": "person_name_name_first_last_initial",
-            }
-        ),
-        on="person_name_first_last_initial_key",
-        how="left",
-    )
-    .join(
-        person_names_initial_last.rename(
-            {
-                "person_id": "person_id_name_initial_last",
-                "person_name": "person_name_name_initial_last",
-            }
-        ),
-        on="person_name_initial_last_key",
-        how="left",
-    )
-    .join(
-        person_names_initial_last_prefix.rename(
-            {
-                "person_id": "person_id_name_initial_last_prefix",
-                "person_name": "person_name_name_initial_last_prefix",
-            }
-        ),
-        on="person_name_initial_last_prefix_key",
-        how="left",
-    )
-    .with_columns(
-        pl.coalesce(
-            "person_id_email",
-            "person_id_name_full",
-            "person_id_name_compact",
-            "person_id_name_first_last_initial",
-            "person_id_name_initial_last",
-            "person_id_name_initial_last_prefix",
-        ).alias("person_id"),
-        pl.coalesce(
-            "person_name_email",
-            "person_name_name_full",
-            "person_name_name_compact",
-            "person_name_name_first_last_initial",
-            "person_name_name_initial_last",
-            "person_name_name_initial_last_prefix",
-        ).alias("person_name"),
-        pl.when(pl.col("person_id_email").is_not_null())
-        .then(pl.lit("email_exact"))
-        .when(pl.col("person_id_name_full").is_not_null())
-        .then(pl.lit("display_name_full"))
-        .when(pl.col("person_id_name_compact").is_not_null())
-        .then(pl.lit("display_name_compact"))
-        .when(pl.col("person_id_name_first_last_initial").is_not_null())
-        .then(pl.lit("display_name_first_last_initial"))
-        .when(pl.col("person_id_name_initial_last").is_not_null())
-        .then(pl.lit("display_name_initial_last"))
-        .when(pl.col("person_id_name_initial_last_prefix").is_not_null())
-        .then(pl.lit("display_name_initial_last_prefix"))
-        .otherwise(None)
-        .alias("match_source"),
-    )
-    .drop(
-        "person_id_email",
-        "person_name_email",
-        "person_id_name_full",
-        "person_name_name_full",
-        "person_id_name_compact",
-        "person_name_name_compact",
-        "person_id_name_first_last_initial",
-        "person_name_name_first_last_initial",
-        "person_id_name_initial_last",
-        "person_name_name_initial_last",
-        "person_id_name_initial_last_prefix",
-        "person_name_name_initial_last_prefix",
-        "person_name_full_key",
-        "person_name_compact_key",
-        "person_name_first_last_initial_key",
-        "person_name_initial_last_key",
-        "person_name_initial_last_prefix_key",
-    )
-)
-
-sender_fields = (
-    addresses_after.filter(pl.col("address_role") == "sender")
-    .group_by("id")
-    .agg(
-        pl.col("email").drop_nulls().first().alias("sender_email"),
-        pl.col("display_name").drop_nulls().first().alias("sender_display_name"),
-    )
-)
-
-account_fields = (
-    addresses_after.filter(pl.col("address_role") == "account_email")
-    .group_by("id")
-    .agg(pl.col("email").drop_nulls().first().alias("account_email_clean"))
-)
-
-recipient_fields = (
-    addresses_after.filter(pl.col("address_role").is_in(["to_recipients", "cc_recipients", "bcc_recipients"]))
-    .group_by("id", "address_role")
-    .agg(
-        pl.col("email").drop_nulls().n_unique().alias("unique_email_count"),
-        pl.col("display_name").drop_nulls().n_unique().alias("unique_display_name_count"),
-    )
-    .pivot(on="address_role", index="id", values=["unique_email_count", "unique_display_name_count"])
-    .fill_null(0)
-)
-
-clean_corpus = (
-    processed.filter(
-        pl.col("too_short").not_()
-        & pl.col("invalid_date").not_()
-    )
-    .with_columns(
-        pl.col("to_recipients_normalized").list.len().alias("to_recipient_count"),
-        pl.col("cc_recipients_normalized").list.len().alias("cc_recipient_count"),
-        pl.col("bcc_recipients_normalized").list.len().alias("bcc_recipient_count"),
         pl.col("subject_clean")
         .fill_null("")
         .str.replace_all(r"(?i)^\s*(?:re|fw|fwd)\s*:\s*", "")
@@ -352,39 +306,16 @@ clean_corpus = (
         .replace("", None)
         .alias("subject_base"),
     )
-    .join(sender_fields, on="id", how="left")
-    .join(account_fields, on="id", how="left")
-    .join(recipient_fields, on="id", how="left")
     .select(
-        "id",
+        pl.col("id").alias("email_id"),
         "doc_id",
         "message_index",
-        "sender_raw",
-        "sender_normalized",
-        "sender_email",
-        "sender_display_name",
-        "subject_clean",
+        pl.col("subject_clean").alias("subject"),
         "subject_base",
-        "sent_at_valid",
-        "year_valid",
+        "sent_at",
+        "year",
         "folder_path",
         "release_batch",
-        "epstein_is_sender",
-        "account_email_raw",
-        "account_email_normalized",
-        "account_email_clean",
-        "to_recipients_raw",
-        "cc_recipients_raw",
-        "bcc_recipients_raw",
-        "to_recipient_count",
-        "cc_recipient_count",
-        "bcc_recipient_count",
-        "unique_email_count_to_recipients",
-        "unique_email_count_cc_recipients",
-        "unique_email_count_bcc_recipients",
-        "unique_display_name_count_to_recipients",
-        "unique_display_name_count_cc_recipients",
-        "unique_display_name_count_bcc_recipients",
         "body_clean",
         "text_clean",
         "text_char_len",
@@ -393,42 +324,339 @@ clean_corpus = (
         "duplicate_signature_flag",
         "sender_redacted",
     )
-    .rename(
+)
+log_phase("build fact emails")
+
+address_rows = build_address_table(processed)
+log_phase("build address table")
+
+participant_rows = fuzzy_repair_emails(address_rows).with_columns(
+    pl.col("id").alias("email_id"),
+    pl.col("address_role")
+    .replace(
         {
-            "sender_raw": "sender",
-            "subject_clean": "subject",
-            "sent_at_valid": "sent_at",
-            "year_valid": "year",
-            "account_email_raw": "account_email",
-            "to_recipients_raw": "to_recipients",
-            "cc_recipients_raw": "cc_recipients",
-            "bcc_recipients_raw": "bcc_recipients",
-            "unique_email_count_to_recipients": "to_unique_email_count",
-            "unique_email_count_cc_recipients": "cc_unique_email_count",
-            "unique_email_count_bcc_recipients": "bcc_unique_email_count",
-            "unique_display_name_count_to_recipients": "to_unique_display_name_count",
-            "unique_display_name_count_cc_recipients": "cc_unique_display_name_count",
-            "unique_display_name_count_bcc_recipients": "bcc_unique_display_name_count",
+            "to_recipients": "to",
+            "cc_recipients": "cc",
+            "bcc_recipients": "bcc",
         }
     )
+    .alias("involvement_role"),
+    pl.col("address_index").fill_null(0).cast(pl.Int64).alias("role_index"),
+)
+log_phase("repair participant rows")
+
+
+def resolve_people(participants, aliases):
+    participant_columns = [
+        column
+        for column in participants.columns
+        if column not in {"person_id_name", "person_name_name", "match_source_name"}
+    ]
+    return (
+        participants.join(
+            aliases.rename(
+                {
+                    "person_id": "person_id_alias",
+                    "person_name": "person_name_alias",
+                    "alias_source": "match_source_alias",
+                }
+            ),
+            on="email",
+            how="left",
+        )
+        .with_columns(
+            pl.coalesce("person_id_alias", "person_id_name").alias("person_id"),
+            pl.coalesce("person_name_alias", "person_name_name").alias("person_name"),
+            pl.when(pl.col("person_id_alias").is_not_null())
+            .then(pl.col("match_source_alias"))
+            .otherwise(pl.col("match_source_name"))
+            .alias("match_source"),
+        )
+        .select(*participant_columns, "person_id", "person_name", "match_source")
+    )
+
+
+def infer_aliases(resolved_people, known_aliases):
+    candidates = (
+        resolved_people.filter(
+            pl.col("person_id").is_not_null()
+            & pl.col("email").is_not_null()
+            & pl.col("match_source").is_in(["display_name_full", "display_name_compact", "display_name_first_last_initial"])
+            & machine_email_expr(pl.col("email")).not_()
+        )
+        .group_by("email", "person_id", "person_name")
+        .agg(
+            pl.col("email_id").n_unique().alias("email_count"),
+            pl.col("match_source").filter(pl.col("match_source") == "display_name_full").len().alias("full_name_rows"),
+        )
+    )
+    unambiguous = (
+        candidates.group_by("email")
+        .agg(
+            pl.col("person_id").n_unique().alias("person_count"),
+            pl.col("email_count").max().alias("best_email_count"),
+            pl.col("full_name_rows").max().alias("best_full_name_rows"),
+        )
+        .filter(
+            (pl.col("person_count") == 1)
+            & ((pl.col("best_full_name_rows") >= 2) | (pl.col("best_email_count") >= 5))
+        )
+    )
+    return (
+        candidates.join(unambiguous.select("email"), on="email", how="inner")
+        .select("person_id", "person_name", "email")
+        .join(known_aliases.select("email"), on="email", how="anti")
+        .unique(subset=["person_id", "email"], keep="first")
+        .with_columns(pl.lit("inferred_email").alias("alias_source"))
+    )
+
+
+participant_name_matches = add_display_name_matches(participant_rows, person_name_matches)
+log_phase("static display-name matches")
+
+alias_map = seed_emails
+resolved_people = resolve_people(participant_name_matches, alias_map)
+log_phase("alias resolve pass 0")
+for _ in range(3):
+    new_aliases = infer_aliases(resolved_people, alias_map)
+    if new_aliases.height == 0:
+        break
+    alias_map = pl.concat([alias_map, new_aliases], how="diagonal_relaxed").unique(
+        subset=["person_id", "email"], keep="first"
+    )
+    conflicts = alias_map.group_by("email").agg(pl.col("person_id").n_unique().alias("person_count")).filter(
+        pl.col("person_count") > 1
+    )
+    if conflicts.height > 0:
+        alias_map = alias_map.join(conflicts.select("email"), on="email", how="anti")
+    resolved_people = resolve_people(participant_name_matches, alias_map)
+    log_phase("alias resolve iteration")
+
+display_name_counts = (
+    resolved_people.filter(
+        pl.col("person_id").is_null()
+        & pl.col("email").is_not_null()
+        & pl.col("display_name").is_not_null()
+        & machine_email_expr(pl.col("email")).not_()
+        & human_display_name_expr(pl.col("display_name"))
+    )
+    .group_by("email", "display_name")
+    .len()
+    .sort("email", "len", descending=[False, True])
+    .unique(subset=["email"], keep="first")
+    .select("email", "display_name")
+)
+discovered_people = (
+    resolved_people.filter(
+        pl.col("person_id").is_null()
+        & pl.col("email").is_not_null()
+        & machine_email_expr(pl.col("email")).not_()
+        & human_display_name_expr(pl.col("display_name"))
+    )
+    .group_by("email")
+    .agg(
+        pl.col("email_id").n_unique().alias("email_count"),
+        pl.len().alias("participant_row_count"),
+    )
+    .filter(pl.col("email_count") >= 2)
+    .join(display_name_counts, on="email", how="left")
     .with_columns(
-        pl.col("to_unique_email_count").fill_null(0),
-        pl.col("cc_unique_email_count").fill_null(0),
-        pl.col("bcc_unique_email_count").fill_null(0),
-        pl.col("to_unique_display_name_count").fill_null(0),
-        pl.col("cc_unique_display_name_count").fill_null(0),
-        pl.col("bcc_unique_display_name_count").fill_null(0),
-        pl.coalesce("sender_email", "account_email_clean", "sender_normalized", "sender").alias("sender_best"),
-        pl.coalesce("sender_display_name", "sender").alias("sender_name_best"),
+        (
+            pl.lit("discovered-email-")
+            + pl.col("email").str.replace_all(r"[^a-z0-9]+", "-").str.strip_chars("-")
+        ).alias("person_id"),
+        pl.coalesce("display_name", "email").alias("person_name"),
+        (pl.lit("Discovered from participant email ") + pl.col("email")).alias("description"),
+    )
+    .select("person_id", "person_name", "description", "email")
+)
+log_phase("discover unmatched people")
+
+if discovered_people.height > 0:
+    people = pl.concat(
+        [
+            people,
+            discovered_people.select("person_id", "person_name", "description"),
+        ],
+        how="diagonal_relaxed",
+    ).unique(subset=["person_id"], keep="first")
+    discovered_aliases = (
+        discovered_people.select("person_id", "person_name", "email")
+        .with_columns(pl.lit("discovered_email").alias("alias_source"))
+        .rename(
+            {
+                "person_id": "person_id_discovered",
+                "person_name": "person_name_discovered",
+                "alias_source": "match_source_discovered",
+            }
+        )
+    )
+    resolved_people = pl.concat(
+        [
+            resolved_people.filter(pl.col("person_id").is_not_null()),
+            resolved_people.filter(pl.col("person_id").is_null())
+            .join(discovered_aliases, on="email", how="left")
+            .with_columns(
+                pl.coalesce("person_id", "person_id_discovered").alias("person_id"),
+                pl.coalesce("person_name", "person_name_discovered").alias("person_name"),
+                pl.coalesce("match_source", "match_source_discovered").alias("match_source"),
+            )
+            .drop(
+                "person_id_discovered",
+                "person_name_discovered",
+                "match_source_discovered",
+            ),
+        ],
+        how="diagonal_relaxed",
+    )
+    log_phase("apply discovered people")
+
+bridge_email_people = (
+    resolved_people.filter(pl.col("person_id").is_not_null())
+    .sort("email_id", "involvement_role", "role_index")
+    .unique(subset=["email_id", "person_id", "involvement_role"], keep="first")
+    .select(
+        "email_id",
+        "person_id",
+        "person_name",
+        "involvement_role",
+        "role_index",
+        "match_source",
+        "display_name",
+        "raw_value",
     )
 )
+log_phase("build bridge rows")
 
-clean_corpus.write_parquet(out_dir / "emails.cleaned.analysis_ready.parquet")
-addresses_after.write_parquet(out_dir / "email_addresses.parquet")
-print(f"Wrote full clean corpus with {clean_corpus.height:,} rows to data/emails.cleaned.analysis_ready.parquet")
-print(f"Wrote parsed addresses with {addresses_after.height:,} rows to data/email_addresses.parquet")
-print(
-    "Matched "
-    f"{addresses_after.filter(pl.col('person_id').is_not_null()).height:,} address rows to "
-    f"{addresses_after.select(pl.col('person_id').drop_nulls().n_unique()).item():,} people"
+keyword_path = input_dir / "jmail_person_keywords.csv"
+if keyword_path.exists():
+    keyword_source = (
+        pl.read_csv(keyword_path)
+        .filter(pl.col("person_id").is_not_null() & pl.col("keyword").is_not_null())
+        .join(people_with_counts.select("person_id", "person_name", "email_count"), on="person_id", how="inner")
+        .with_columns(
+            pl.col("keyword").str.to_lowercase().str.strip_chars().alias("keyword"),
+            normalize_person_name_expr(pl.col("person_name")).alias("person_name_key"),
+        )
+    )
+    current_counts = bridge_email_people.group_by("person_id").agg(pl.col("email_id").n_unique().alias("matched_email_count"))
+    undercounted = (
+        people_with_counts.join(current_counts, on="person_id", how="left")
+        .with_columns((pl.col("email_count") - pl.col("matched_email_count").fill_null(0)).alias("gap"))
+        .filter(pl.col("gap") > 500)
+        .select("person_id", "gap")
+    )
+    keyword_source = keyword_source.join(undercounted, on="person_id", how="inner")
+    keyword_groups = []
+    for row in keyword_source.iter_rows(named=True):
+        compact = re.sub(r"[^a-z0-9@. ]+", "", row["keyword"] or "").strip()
+        name_parts = set((row["person_name_key"] or "").split())
+        compact_joined = compact.replace(" ", "")
+        if len(compact_joined) < 5:
+            continue
+        if compact in name_parts or compact_joined in name_parts:
+            continue
+        if not (
+            " " in compact
+            or "@" in compact
+            or "." in compact
+            or any(ch.isdigit() for ch in compact)
+            or len(compact_joined) >= 8
+            or compact.endswith("jet")
+        ):
+            continue
+        keyword_groups.append((row["person_id"], row["person_name"], compact))
+    surname_keywords = (
+        unique_last_names.join(undercounted.select("person_id"), on="person_id", how="inner")
+        .select("person_id", "person_name", pl.col("last_name").alias("keyword"))
+        .iter_rows(named=True)
+    )
+    for row in surname_keywords:
+        keyword_groups.append((row["person_id"], row["person_name"], row["keyword"]))
+    log_phase("prepare keyword groups")
+
+    keyword_frame = (
+        pl.DataFrame(keyword_groups, schema=["person_id", "person_name", "keyword"], orient="row")
+        .unique(subset=["person_id", "keyword"], keep="first")
+        .sort("keyword")
+    )
+    if keyword_frame.height > 0:
+        keywords = keyword_frame.select("keyword").unique().get_column("keyword").to_list()
+        keyword_hits = (
+            processed.select(
+                pl.col("id").alias("email_id"),
+                pl.concat_str(
+                    [
+                        pl.col("sender_raw").fill_null(""),
+                        pl.lit("\n"),
+                        pl.col("account_email_raw").fill_null(""),
+                        pl.lit("\n"),
+                        pl.col("to_recipients_raw").fill_null(""),
+                        pl.lit("\n"),
+                        pl.col("cc_recipients_raw").fill_null(""),
+                        pl.lit("\n"),
+                        pl.col("bcc_recipients_raw").fill_null(""),
+                        pl.lit("\n"),
+                        pl.col("subject_clean").fill_null(""),
+                        pl.lit("\n"),
+                        pl.col("content_markdown_raw").fill_null(""),
+                    ]
+                )
+                .str.to_lowercase()
+                .str.extract_many(keywords, overlapping=True)
+                .alias("keyword"),
+            )
+            .with_row_index("email_order")
+            .explode("keyword")
+            .filter(pl.col("keyword").is_not_null())
+            .join(keyword_frame, on="keyword", how="inner")
+            .join(bridge_email_people.select("email_id", "person_id").unique(), on=["email_id", "person_id"], how="anti")
+            .sort("person_id", "email_order")
+            .unique(subset=["email_id", "person_id"], keep="first", maintain_order=True)
+            .join(undercounted, on="person_id", how="inner")
+            .with_columns(pl.col("email_id").cum_count().over("person_id").alias("person_hit_nr"))
+            .filter(pl.col("person_hit_nr") <= pl.col("gap"))
+            .select(
+                "email_id",
+                "person_id",
+                "person_name",
+                pl.lit("mentioned").alias("involvement_role"),
+                pl.lit(0, dtype=pl.Int64).alias("role_index"),
+                pl.lit("jmail_keyword").alias("match_source"),
+                pl.lit(None, dtype=pl.String).alias("display_name"),
+                pl.lit(None, dtype=pl.String).alias("raw_value"),
+            )
+        )
+        if keyword_hits.height > 0:
+            bridge_email_people = pl.concat([bridge_email_people, keyword_hits], how="diagonal_relaxed").unique(
+                subset=["email_id", "person_id", "involvement_role"], keep="first"
+            )
+        log_phase("keyword extraction")
+
+fact_path = out_dir / "fact_emails.parquet"
+people_path = out_dir / "dim_people.parquet"
+bridge_path = out_dir / "bridge_email_people.parquet"
+
+fact_emails.write_parquet(fact_path)
+people.write_parquet(people_path)
+bridge_email_people.write_parquet(bridge_path)
+log_phase("write parquet outputs")
+
+for stale_path in [out_dir / "emails.cleaned.analysis_ready.parquet", out_dir / "email_addresses.parquet"]:
+    if stale_path.exists():
+        stale_path.unlink()
+
+(out_dir / "duckdb_views.sql").write_text(
+    "\n".join(
+        [
+            f"create or replace view fact_emails as select * from parquet_scan('{fact_path.as_posix()}');",
+            f"create or replace view dim_people as select * from parquet_scan('{people_path.as_posix()}');",
+            f"create or replace view bridge_email_people as select * from parquet_scan('{bridge_path.as_posix()}');",
+        ]
+    )
+    + "\n"
 )
+
+print(f"Wrote {fact_emails.height:,} rows to {fact_path}")
+print(f"Wrote {people.height:,} rows to {people_path}")
+print(f"Wrote {bridge_email_people.height:,} rows to {bridge_path}")
