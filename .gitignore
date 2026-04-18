@@ -8,13 +8,31 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Data (allow specific files)
 data
 !data/
 data/*
 !data/fact_emails.parquet
 !data/bridge_email_people.parquet
 !data/dim_people.parquet
-models
-.ruff_cache
 !data/famous_correspondents.csv
 !data/people.csv
+
+# Models
+models
+
+# Outputs (generated)
+outputs/
+outputs_colab_full/
+
+# Tools / IDE / OS
+.ruff_cache
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.ipynb_checkpoints/
+.ipynb_checkpoints/
