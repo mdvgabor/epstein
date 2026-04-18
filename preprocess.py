@@ -1,8 +1,5 @@
 import os
 from pathlib import Path
-import re
-from time import perf_counter
-
 import polars as pl
 
 from address_processing import (
@@ -19,16 +16,6 @@ input_dir = Path("data")
 out_dir = Path(os.environ.get("PREPROCESS_OUT_DIR", input_dir.as_posix()))
 out_dir.mkdir(parents=True, exist_ok=True)
 sample_rows = int(os.environ.get("PREPROCESS_SAMPLE_ROWS", "0") or "0")
-profile_started_at = perf_counter()
-profile_last_at = profile_started_at
-
-
-def log_phase(label):
-    global profile_last_at
-    now = perf_counter()
-    print(f"[profile] {label}: phase={now - profile_last_at:.2f}s total={now - profile_started_at:.2f}s", flush=True)
-    profile_last_at = now
-
 
 def person_name_key_exprs(expr):
     normalized = normalize_person_name_expr(expr)
@@ -52,7 +39,6 @@ def person_name_key_exprs(expr):
         .alias("name_key_initial_last_prefix"),
     ]
 
-
 def name_match_label_expr():
     return pl.col("name_key_type").replace(
         {
@@ -63,7 +49,6 @@ def name_match_label_expr():
             "name_key_initial_last_prefix": "display_name_initial_last_prefix",
         }
     )
-
 
 def name_match_priority_expr():
     return (
@@ -79,7 +64,6 @@ def name_match_priority_expr():
         .then(pl.lit(4, dtype=pl.UInt8))
         .otherwise(None)
     )
-
 
 def long_name_keys(frame, index):
     return (
@@ -100,7 +84,6 @@ def long_name_keys(frame, index):
         .drop("name_key_type")
     )
 
-
 def unique_person_name_matches(people_frame):
     keyed = people_frame.with_columns(*person_name_key_exprs(pl.col("person_name")))
     long = long_name_keys(keyed, ["person_id", "person_name"])
@@ -115,7 +98,6 @@ def unique_person_name_matches(people_frame):
         .with_columns(name_match_priority_expr().alias("match_priority"))
         .select("match_source", "match_priority", "person_name_key", "person_id", "person_name")
     )
-
 
 def add_display_name_matches(participants, name_matches):
     participant_columns = participants.columns
@@ -140,12 +122,10 @@ def add_display_name_matches(participants, name_matches):
         .drop("participant_row")
     )
 
-
 def machine_email_expr(expr):
     return expr.fill_null("").str.to_lowercase().str.contains(
         r"^(?:no-?reply|noreply|donotreply|do-?not-?reply|news|newsletter|updates?|notifications?|hello|info|support|mailer|mail|admin|contact|marketing|sales|editor|alerts?|mailer-daemon|postmaster)@|^[a-z0-9._%+\-]*(?:batch|daemon|notification|newsletter|bounce|system)[a-z0-9._%+\-]*@|@list\.|@[^@]*\.list\.|@(?:lists|newsletter|notifications?)\."
     )
-
 
 def human_display_name_expr(expr):
     name_key = normalize_person_name_expr(expr)
@@ -169,87 +149,85 @@ def human_display_name_expr(expr):
         & name_key.str.contains(r"\b(?:gmail|googlemail|yahoo|hotmail|outlook|icloud|me|mac|msn|live|gmx|aol|protonmail|ymail|rocketmail)\b.*\b(?:com|net|org|edu|gov|mil|int|co|io|ai|me|tv|us|uk|ru|fr|de|ch|it|nl|se|no|es|br|ca|mx)\b").not_()
     )
 
+people_source = pl.read_csv(input_dir / "people.csv").with_columns(
+    pl.col("email_count").cast(pl.Int64, strict=False).alias("email_count")
+)
+jmail_person_ids = (
+    pl.read_csv(input_dir / "jmail_people.csv").select(pl.col("slug").alias("person_id")).unique()
+)
 
-people = pl.read_csv(input_dir / "jmail_people.csv").select(
+people = people_source.select(
     pl.col("slug").alias("person_id"),
     pl.col("name").alias("person_name"),
     "description",
 )
-people_with_counts = pl.read_csv(input_dir / "jmail_people.csv").select(
-    pl.col("slug").alias("person_id"),
-    pl.col("name").alias("person_name"),
-    "email_count",
+jmail_people = people.join(jmail_person_ids, on="person_id", how="inner").select(
+    "person_id", "person_name"
 )
-
-seed_path = input_dir / "person_email_seed.csv"
-if not seed_path.exists():
-    pl.DataFrame(
-        {
-            "person_id": ["jeffrey-epstein", "jeffrey-epstein"],
-            "email": ["jeeproject@yahoo.com", "jeevacation@gmail.com"],
-        }
-    ).write_csv(seed_path)
-
-seed_emails = (
-    pl.read_csv(seed_path)
+people_aliases = (
+    people_source.select(
+        pl.col("slug").alias("person_id"),
+        pl.col("aliases").fill_null("[]").str.json_decode(pl.List(pl.String)).alias("alias"),
+    )
+    .explode("alias")
+    .filter(pl.col("alias").is_not_null())
+    .select("person_id", pl.col("alias").alias("person_name"))
+)
+jmail_people_names = pl.concat(
+    [jmail_people, people_aliases.join(jmail_person_ids, on="person_id", how="inner")]
+).unique(subset=["person_id", "person_name"], keep="first")
+people_names = pl.concat(
+    [people.select("person_id", "person_name"), jmail_people_names], how="diagonal_relaxed"
+).unique(
+    subset=["person_id", "person_name"], keep="first"
+)
+people_csv_emails = (
+    people_source.select(
+        pl.col("slug").alias("person_id"),
+        pl.col("emails").fill_null("[]").str.json_decode(pl.List(pl.String)).alias("email"),
+    )
+    .explode("email")
     .select("person_id", canonicalize_email_expr(pl.col("email")).alias("email"))
     .filter(pl.col("person_id").is_not_null() & pl.col("email").is_not_null())
     .unique(subset=["person_id", "email"], keep="first")
-    .join(people.select("person_id", "person_name"), on="person_id", how="inner")
-    .with_columns(pl.lit("seed_email").alias("alias_source"))
 )
-
-missing_people = (
-    pl.read_csv(seed_path)
-    .select("person_id")
-    .filter(pl.col("person_id").is_not_null())
-    .unique()
-    .join(people.select("person_id"), on="person_id", how="anti")
-)
-if missing_people.height > 0:
-    raise ValueError(f"Unknown person_id values in {seed_path}: {missing_people['person_id'].to_list()}")
-
-conflicting_seed_emails = (
-    seed_emails.group_by("email")
+conflicting_people_csv_emails = (
+    people_csv_emails.group_by("email")
     .agg(pl.col("person_id").n_unique().alias("person_count"))
     .filter(pl.col("person_count") > 1)
 )
-if conflicting_seed_emails.height > 0:
-    conflicts = (
-        seed_emails.join(conflicting_seed_emails.select("email"), on="email", how="inner")
-        .sort("email", "person_id")
-        .select("email", "person_id")
-        .iter_rows()
-    )
-    raise ValueError(f"Conflicting email assignments in {seed_path}: {list(conflicts)}")
+people_csv_emails = (
+    people_csv_emails.join(conflicting_people_csv_emails.select("email"), on="email", how="anti")
+    .join(people.select("person_id", "person_name"), on="person_id", how="inner")
+    .with_columns(pl.lit("people_csv_email").alias("alias_source"))
+)
 
-person_name_matches = unique_person_name_matches(people)
-people_last_names = (
-    people.with_columns(normalize_person_name_expr(pl.col("person_name")).str.split(" ").list.last().alias("last_name"))
-    .filter(pl.col("last_name").is_not_null() & (pl.col("last_name").str.len_chars() >= 5))
+person_name_matches = (
+    pl.concat(
+        [
+            unique_person_name_matches(people_names).filter(
+                pl.col("match_source").is_in(["display_name_full", "display_name_compact"])
+            ),
+            unique_person_name_matches(jmail_people_names),
+        ],
+        how="diagonal_relaxed",
+    )
+    .unique(subset=["match_source", "person_name_key", "person_id"], keep="first")
+    .drop("person_name")
+    .join(people.select("person_id", "person_name"), on="person_id", how="inner")
 )
-unique_last_names = (
-    people_last_names.group_by("last_name")
-    .agg(pl.col("person_id").n_unique().alias("person_count"))
-    .filter(pl.col("person_count") == 1)
-    .join(people_last_names.select("person_id", "person_name", "last_name"), on="last_name", how="inner")
-    .select("person_id", "person_name", "last_name")
-)
-log_phase("load people metadata")
 
 email_scan = pl.scan_parquet(input_dir / "emails.parquet").filter(pl.col("is_promotional").fill_null(False).not_())
 if sample_rows > 0:
     email_scan = email_scan.head(sample_rows)
-    print(f"[profile] sample mode: reading first {sample_rows:,} non-promotional emails", flush=True)
+    print(f"sample mode: reading first {sample_rows:,} non-promotional emails", flush=True)
 
 base = (
     email_scan
     .with_columns(
-        pl.col("is_promotional").fill_null(False).alias("is_promotional"),
         pl.col("sender").alias("sender_raw"),
         pl.col("account_email").alias("account_email_raw"),
         *[pl.col(role).alias(f"{role}_raw") for role in ["to_recipients", "cc_recipients", "bcc_recipients"]],
-        pl.col("content_markdown").alias("content_markdown_raw"),
         pl.col("subject").fill_null("").str.strip_chars().replace("", None).alias("subject_clean"),
         normalize_text(pl.col("sender")).alias("sender_normalized"),
         normalize_text(pl.col("account_email")).alias("account_email_normalized"),
@@ -303,7 +281,6 @@ base = (
 )
 
 processed = base.collect()
-log_phase("base collect")
 
 fact_emails = (
     processed.with_columns(
@@ -335,10 +312,8 @@ fact_emails = (
         "sender_redacted",
     )
 )
-log_phase("build fact emails")
 
 address_rows = build_address_table(processed)
-log_phase("build address table")
 
 participant_rows = fuzzy_repair_emails(address_rows).with_columns(
     pl.col("id").alias("email_id"),
@@ -353,8 +328,6 @@ participant_rows = fuzzy_repair_emails(address_rows).with_columns(
     .alias("involvement_role"),
     pl.col("address_index").fill_null(0).cast(pl.Int64).alias("role_index"),
 )
-log_phase("repair participant rows")
-
 
 def resolve_people(participants, aliases):
     participant_columns = [
@@ -384,7 +357,6 @@ def resolve_people(participants, aliases):
         )
         .select(*participant_columns, "person_id", "person_name", "match_source")
     )
-
 
 def infer_aliases(resolved_people, known_aliases):
     candidates = (
@@ -420,13 +392,11 @@ def infer_aliases(resolved_people, known_aliases):
         .with_columns(pl.lit("inferred_email").alias("alias_source"))
     )
 
-
 participant_name_matches = add_display_name_matches(participant_rows, person_name_matches)
-log_phase("static display-name matches")
 
-alias_map = seed_emails
+alias_map = people_csv_emails
 resolved_people = resolve_people(participant_name_matches, alias_map)
-log_phase("alias resolve pass 0")
+
 for _ in range(3):
     new_aliases = infer_aliases(resolved_people, alias_map)
     if new_aliases.height == 0:
@@ -440,7 +410,6 @@ for _ in range(3):
     if conflicts.height > 0:
         alias_map = alias_map.join(conflicts.select("email"), on="email", how="anti")
     resolved_people = resolve_people(participant_name_matches, alias_map)
-    log_phase("alias resolve iteration")
 
 display_name_counts = (
     resolved_people.filter(
@@ -480,7 +449,6 @@ discovered_people = (
     )
     .select("person_id", "person_name", "description", "email")
 )
-log_phase("discover unmatched people")
 
 if discovered_people.height > 0:
     people = pl.concat(
@@ -519,7 +487,6 @@ if discovered_people.height > 0:
         ],
         how="diagonal_relaxed",
     )
-    log_phase("apply discovered people")
 
 bridge_email_people = (
     resolved_people.filter(pl.col("person_id").is_not_null())
@@ -536,112 +503,6 @@ bridge_email_people = (
         "raw_value",
     )
 )
-log_phase("build bridge rows")
-
-keyword_path = input_dir / "jmail_person_keywords.csv"
-if keyword_path.exists():
-    keyword_source = (
-        pl.read_csv(keyword_path)
-        .filter(pl.col("person_id").is_not_null() & pl.col("keyword").is_not_null())
-        .join(people_with_counts.select("person_id", "person_name", "email_count"), on="person_id", how="inner")
-        .with_columns(
-            pl.col("keyword").str.to_lowercase().str.strip_chars().alias("keyword"),
-            normalize_person_name_expr(pl.col("person_name")).alias("person_name_key"),
-        )
-    )
-    current_counts = bridge_email_people.group_by("person_id").agg(pl.col("email_id").n_unique().alias("matched_email_count"))
-    undercounted = (
-        people_with_counts.join(current_counts, on="person_id", how="left")
-        .with_columns((pl.col("email_count") - pl.col("matched_email_count").fill_null(0)).alias("gap"))
-        .filter(pl.col("gap") > 500)
-        .select("person_id", "gap")
-    )
-    keyword_source = keyword_source.join(undercounted, on="person_id", how="inner")
-    keyword_groups = []
-    for row in keyword_source.iter_rows(named=True):
-        compact = re.sub(r"[^a-z0-9@. ]+", "", row["keyword"] or "").strip()
-        name_parts = set((row["person_name_key"] or "").split())
-        compact_joined = compact.replace(" ", "")
-        if len(compact_joined) < 5:
-            continue
-        if compact in name_parts or compact_joined in name_parts:
-            continue
-        if not (
-            " " in compact
-            or "@" in compact
-            or "." in compact
-            or any(ch.isdigit() for ch in compact)
-            or len(compact_joined) >= 8
-            or compact.endswith("jet")
-        ):
-            continue
-        keyword_groups.append((row["person_id"], row["person_name"], compact))
-    surname_keywords = (
-        unique_last_names.join(undercounted.select("person_id"), on="person_id", how="inner")
-        .select("person_id", "person_name", pl.col("last_name").alias("keyword"))
-        .iter_rows(named=True)
-    )
-    for row in surname_keywords:
-        keyword_groups.append((row["person_id"], row["person_name"], row["keyword"]))
-    log_phase("prepare keyword groups")
-
-    keyword_frame = (
-        pl.DataFrame(keyword_groups, schema=["person_id", "person_name", "keyword"], orient="row")
-        .unique(subset=["person_id", "keyword"], keep="first")
-        .sort("keyword")
-    )
-    if keyword_frame.height > 0:
-        keywords = keyword_frame.select("keyword").unique().get_column("keyword").to_list()
-        keyword_hits = (
-            processed.select(
-                pl.col("id").alias("email_id"),
-                pl.concat_str(
-                    [
-                        pl.col("sender_raw").fill_null(""),
-                        pl.lit("\n"),
-                        pl.col("account_email_raw").fill_null(""),
-                        pl.lit("\n"),
-                        pl.col("to_recipients_raw").fill_null(""),
-                        pl.lit("\n"),
-                        pl.col("cc_recipients_raw").fill_null(""),
-                        pl.lit("\n"),
-                        pl.col("bcc_recipients_raw").fill_null(""),
-                        pl.lit("\n"),
-                        pl.col("subject_clean").fill_null(""),
-                        pl.lit("\n"),
-                        pl.col("content_markdown_raw").fill_null(""),
-                    ]
-                )
-                .str.to_lowercase()
-                .str.extract_many(keywords, overlapping=True)
-                .alias("keyword"),
-            )
-            .with_row_index("email_order")
-            .explode("keyword")
-            .filter(pl.col("keyword").is_not_null())
-            .join(keyword_frame, on="keyword", how="inner")
-            .join(bridge_email_people.select("email_id", "person_id").unique(), on=["email_id", "person_id"], how="anti")
-            .sort("person_id", "email_order")
-            .unique(subset=["email_id", "person_id"], keep="first", maintain_order=True)
-            .join(undercounted, on="person_id", how="inner")
-            .with_columns(pl.col("email_id").cum_count().over("person_id").alias("person_hit_nr"))
-            .filter(pl.col("person_hit_nr") <= pl.col("gap"))
-            .select(
-                "email_id",
-                "person_id",
-                "person_name",
-                pl.lit("mentioned").alias("involvement_role"),
-                pl.lit(0, dtype=pl.Int64).alias("role_index"),
-                pl.lit("jmail_keyword").alias("match_source"),
-                pl.lit(None, dtype=pl.String).alias("display_name"),
-                pl.lit(None, dtype=pl.String).alias("raw_value"),
-            )
-        )
-        if keyword_hits.height > 0:
-            bridge_email_people = pl.concat([bridge_email_people, keyword_hits], how="diagonal_relaxed").unique(
-                subset=["email_id", "person_id", "involvement_role"], keep="first"
-            )
-        log_phase("keyword extraction")
 
 fact_path = out_dir / "fact_emails.parquet"
 people_path = out_dir / "dim_people.parquet"
@@ -650,11 +511,6 @@ bridge_path = out_dir / "bridge_email_people.parquet"
 fact_emails.write_parquet(fact_path)
 people.write_parquet(people_path)
 bridge_email_people.write_parquet(bridge_path)
-log_phase("write parquet outputs")
-
-for stale_path in [out_dir / "emails.cleaned.analysis_ready.parquet", out_dir / "email_addresses.parquet"]:
-    if stale_path.exists():
-        stale_path.unlink()
 
 (out_dir / "duckdb_views.sql").write_text(
     "\n".join(

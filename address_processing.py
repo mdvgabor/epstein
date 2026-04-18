@@ -12,12 +12,12 @@ def normalize_text(expr):
              "\u00a0", "\u200b", "\u2018", "\u2019", "\u201c", "\u201d",
              "\u2039", "\u276e", "\u3008", "\uff1c",
              "\u203a", "\u276f", "\u3009", "\uff1e",
-             "\u3010", "\u3011"],
+             "\u3010", "\u3011", "\ufffd"],
             [" ", "<", ">", '"', "'", "&",
              " ", " ", "'", "'", '"', '"',
              "<", "<", "<", "<",
              ">", ">", ">", ">",
-             "[", "]"],
+             "[", "]", " "],
         )
         .str.replace_all(r"</?(?:u|s|change)>", "")
         .str.replace_all(r"\s+", " ")
@@ -26,15 +26,272 @@ def normalize_text(expr):
     )
 
 
+def clean_quoted_printable_body_expr(expr):
+    return (
+        expr.str.replace_many(
+            {
+                "=C2=A0": " ",
+                "=C2=AD": "",
+                "=C2�": " ",
+                "=C2": " ",
+                "=E2=80=98": "'",
+                "=E2=80=99": "'",
+                "=E2=80=9A": "'",
+                "=E2=80=9B": "'",
+                "=E2=80=9C": '"',
+                "=E2=80=9D": '"',
+                "=E2=80=9E": '"',
+                "=E2=80=9F": '"',
+                "=E2=80=8B": "",
+                "=E2=80=93": "-",
+                "=E2=80=94": "-",
+                "=E2=80=90": "-",
+                "=E2=80=91": "-",
+                "=E2=80=92": "-",
+                "=E2=80=A6": "...",
+                "=E2=82=AC": "EUR",
+                "=A0": " ",
+                "=AO": " ",
+                "=AD": "",
+                "=91": "'",
+                "=92": "'",
+                "=93": '"',
+                "=94": '"',
+                "=96": "-",
+                "=97": "-",
+                "=85": "...",
+                "=20": " ",
+                "=09": " ",
+                "=0A": " ",
+                "=0D": " ",
+                "=3D": "=",
+                "=2E": ".",
+                "=2C": ",",
+                "=3A": ":",
+                "=3B": ";",
+                "=21": "!",
+                "=3F": "?",
+                "=28": "(",
+                "=29": ")",
+                "=2F": "/",
+                "=40": "@",
+                "=5F": "_",
+                "=2D": "-",
+                "=nbsp;": " ",
+            },
+            ascii_case_insensitive=True,
+        )
+        .str.replace_all(r"(?i)([\p{L}])=E2\s+([st])\b", "${1}'${2}")
+        .str.replace_all(r"(?i)=E2", " ")
+        .str.replace_all(r"([—–-])=([\p{L}])", "${1}${2}")
+        .str.replace_all(r"(?i)(^|\s)=([a-z])", "${1}${2}")
+        .str.replace_all(r"(?i)([\p{L}])=([\p{L}])", "${1}${2}")
+        .str.replace_all(r"(?i)([\p{L}\p{N}])=(?:\s+>?\s*|>\s*)([\p{L}\p{N}])", "${1}${2}")
+        .str.replace_all(r"(?i)=\s*(?:>\s*)?(?:\r?\n|\r)\s*(?:>\s*)?", "")
+        .str.replace_all(r"(?i)\bContent-Transfer-Encoding:\s*quoted-printable\b", " ")
+        .str.replace_all(r"(?i)\bContent-Type:\s*text/(?:plain|html);\s*charset=[A-Za-z0-9_-]+\b", " ")
+    )
+
+
+def remove_attachment_payloads_expr(expr):
+    return (
+        expr.str.replace_all(r"(?s)(?:^|\r?\n)begin [0-7]{3} .+?(?:\r?\n)end(?:\r?\n|$)", " ")
+        .str.replace_all(r"(?:^|\r?\n)M[ -~]{50,}(?:\r?\n|$)", " ")
+        .str.replace_all(r"(?:^|\r?\n)[A-Za-z0-9+/]{80,}={0,2}(?:\r?\n|$)", " ")
+        .str.replace_all(r"(?i)--[A-Za-z0-9_./+=\-]{10,}-*", " ")
+        .str.replace_all(
+            r"(?im)^Content-(?:Type|Transfer-Encoding|Disposition|ID|Description):[^\n]*(?:\n[ \t]+[^\n]*)*",
+            " ",
+        )
+    )
+
+
+def remove_legal_disclaimers_expr(expr):
+    return (
+        expr.str.replace_all(r"(?:^|\s)>+\s*", " ")
+        .str.replace_all(r"\|+", " ")
+        .str.replace_all(
+            r"(?is)(?:\*{10,}\s*)?(?:please not[e]?\s*)?\bthe(?:\s|=)*information contain\w* in this\s*(?:communication|message|e-?mail|email)\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bplease not[e]?.*?\bthe(?:\s|=)*information contain\w* in this\s*(?:communication|message|e-?mail|email)\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bplease\s+not[e]?.{0,120}?\binformat\w* contain\w* in this\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bplease\s+not[e]?.{0,120}?\bth?e?\s*informat\w* contain\w* in this\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\b[a-z']{3,5}\s+information contain\w* in this\s*(?:communication|message|e-?mail|email)\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthe(?:\s|=)*information contain\w* in this\s+\w{8,16}\s+is confidential\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis (?:e-?mail|email|message) and any attachments\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis e-?mail and any files transmitted with it\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis (?:e-?mail|email) contains legally privileged\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis message is directed to and is for the use\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis (?:e-?mail|email) message, including any attached files\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bif you are not (?:the )?(?:intended|designated|named) recipient\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bif you are not an intended recipient\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bif the reader of this (?:e-?mail|email|message|e-?mail message) is not the intended recipient\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bif (?:you have )?received this (?:communication|message|e-?mail|email) in error\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bif you have received this communication and are not identified above\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\byou are hereby notified that any\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis message is a private communication\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis message and any attachments.*?may contain confidential\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bconfidentiality notice\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis communication may contain confidential\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis communication and any attachments contain information\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthe information contained in this electronic message\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthe information in this electronic mail message\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bdisclaimer\s*(?:important!?\s*)?this (?:email|message)\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis (?:email|message) and any files transmitted with it are confidential\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis message is intended for the above named person\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\byou, the recipient, are obligated to maintain it\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bunauthorized use,?\s+disclosure or copying of this communication\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\b\w?authorized use[,.]?\s+disclosure or copying of this communication\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bother use of this communication is strictly prohibited\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bany other use of the information therein is strictly prohibited\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis transmission may contain information that is confidential\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bintended recipient\(s\) and may contain information that is confidential\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bany unauthorized review, use, duplication, disclosure or distribution is strictly prohibited\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bit is the property of jeffrey epstein\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bproperty\s+o?f?\s*(?:jeffrey epstein|jee)\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthe\s*property\s+o?f?\s*(?:jeffrey epstein|jee|darren k\.? indyke)\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bany review, reliance or distribution by others\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthis document and the information contained herein are intended only\b.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bthe information contained in this email is intended only\b.*$",
+            " ",
+        )
+    )
+
+
 def clean_body(expr):
     return (
-        normalize_text(
-            expr.fill_null("")
-            .str.replace_all(r"(?im)^(?:from|to|cc|bcc|sent|subject):[^\n]*$", " ")
-            .str.replace_all(
-                r"(?im)^[-_]{2,}.*forwarded message.*$|^this email and any attachments.*$|^please consider the environment.*$",
-                " ",
+        remove_legal_disclaimers_expr(
+            normalize_text(
+                clean_quoted_printable_body_expr(remove_attachment_payloads_expr(expr.fill_null("")))
+                .str.replace_all(r"(?im)^(?:from|to|cc|bcc|sent|subject):[^\n]*$", " ")
+                .str.replace_all(
+                    r"(?im)^[-_]{2,}.*forwarded message.*$|^this email and any attachments.*$|^please consider the environment.*$",
+                    " ",
+                )
             )
+        )
+        .str.replace_all(
+            r"(?i)\b(?:confidential|privileged|intended|unauthorized|prohibited|disclosure|copying|attachments?|thereof|addressee|recipient|notify|destroy|return|error|unlawful)\b(?:\s+\b(?:confidential|privileged|intended|unauthorized|prohibited|disclosure|copying|attachments?|thereof|addressee|recipient|notify|destroy|return|error|unlawful)\b){5,}",
+            " ",
         )
         .str.replace_all(r"(?i)https?://\S+|www\.\S+", " ")
         .str.replace_many(
