@@ -127,8 +127,18 @@ def human_display_name_expr(expr):
         expr.is_not_null()
         & expr.str.contains("@", literal=True).not_()
         & expr.str.contains("&", literal=True).not_()
+        & expr.str.contains(r"(?i)^\s*[a-z]").fill_null(False)
+        & expr.str.contains(r"^[=0-9]").not_()
+        & expr.str.contains(r"[=█]").not_()
+        & expr.str.contains(
+            r"(?i)\b[a-z0-9._%+\-]+(?:\s*[.@]|@)[a-z0-9.-]+\.(?:com|net|org|edu|gov|mil|int|co|io|ai|me|tv|us|uk|ru|fr|de|ch|it|nl|se|no|es|br|ca|mx)\b"
+        ).not_()
+        & expr.str.contains(
+            r"(?i)\b(?:amazon|classmates|expedia|vegas|onekingslane|latimes|nytimes|boblynchmovers)\.(?:com|net|org)\b"
+        ).not_()
         & name_key.is_not_null()
         & (tokens.list.len() >= 2)
+        & (tokens.list.len() <= 4)
         & first.str.len_chars().fill_null(0).ge(2)
         & last.str.len_chars().fill_null(0).ge(2)
         & name_key.str.contains(
@@ -384,7 +394,9 @@ unresolved_human_participants = resolved_people.filter(
     & human_display_name_expr(pl.col("display_name"))
 )
 display_name_counts = (
-    unresolved_human_participants.filter(pl.col("display_name").is_not_null())
+    unresolved_human_participants.filter(
+        pl.col("display_name").is_not_null() & human_display_name_expr(pl.col("display_name"))
+    )
     .group_by("email", "display_name")
     .len()
     .sort("email", "len", descending=[False, True])
