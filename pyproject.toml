@@ -3,7 +3,7 @@ name = "epstein"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
     "pydantic>=2.13.0b2",
@@ -19,6 +19,8 @@ dependencies = [
     "pandas>=3.0.2",
     "pyarrow>=23.0.1",
     "scikit-learn>=1.8.0",
+    "nltk>=3.9.4",
+    "networkx>=3.6.1",
 ]
 
 [dependency-groups]
@@ -28,5 +30,3 @@ dev = [
     "nbformat>=5.10.4",
 ]
 
-[tool.uv.sources]
-thinc-apple-ops = { git = "https://github.com/explosion/thinc-apple-ops" } # git install for python 3.14

@@ -26,6 +26,31 @@ def normalize_text(expr):
     )
 
 
+def normalize_body_lines_expr(expr):
+    return (
+        expr.fill_null("")
+        .str.replace_many(
+            ["&nbsp;", "&lt;", "&gt;", "&quot;", "&#39;", "&amp;",
+             "\u00a0", "\u200b", "\u2018", "\u2019", "\u201c", "\u201d",
+             "\u2039", "\u276e", "\u3008", "\uff1c",
+             "\u203a", "\u276f", "\u3009", "\uff1e",
+             "\u3010", "\u3011", "\ufffd"],
+            [" ", "<", ">", '"', "'", "&",
+             " ", " ", "'", "'", '"', '"',
+             "<", "<", "<", "<",
+             ">", ">", ">", ">",
+             "[", "]", " "],
+        )
+        .str.replace_all(r"</?(?:u|s|change)>", "")
+        .str.replace_all(r"\r\n?", "\n")
+        .str.replace_all(r"[ \t\f\v]+", " ")
+        .str.replace_all(r"(?m)^[ \t]+|[ \t]+$", "")
+        .str.replace_all(r"\n{3,}", "\n\n")
+        .str.strip_chars()
+        .replace("", None)
+    )
+
+
 def clean_quoted_printable_body_expr(expr):
     return (
         expr.str.replace_many(
@@ -62,8 +87,8 @@ def clean_quoted_printable_body_expr(expr):
                 "=85": "...",
                 "=20": " ",
                 "=09": " ",
-                "=0A": " ",
-                "=0D": " ",
+                "=0A": "\n",
+                "=0D": "\n",
                 "=3D": "=",
                 "=2E": ".",
                 "=2C": ",",
@@ -91,6 +116,93 @@ def clean_quoted_printable_body_expr(expr):
         .str.replace_all(r"(?i)\bContent-Transfer-Encoding:\s*quoted-printable\b", " ")
         .str.replace_all(r"(?i)\bContent-Type:\s*text/(?:plain|html);\s*charset=[A-Za-z0-9_-]+\b", " ")
     )
+
+
+def strip_email_footer(value):
+    if value is None:
+        return None
+
+    lines = value.splitlines()
+    cleaned = [line.strip(" \t>") for line in lines]
+    cut = len(lines)
+    for index, line in enumerate(cleaned):
+        lowered = line.lower()
+        if re.fullmatch(r"[-_ ]*(?:original|forwarded) message[-_ :]*", lowered):
+            cut = index
+            break
+        if re.fullmatch(r"begin forwarded message:?", lowered):
+            cut = index
+            break
+        if re.fullmatch(r"(?:on .{1,260}\s+)?[^:\n]{1,220}\s+wrote:", lowered) or re.fullmatch(r"wrote:", lowered):
+            cut = index - 1 if index > 0 and re.search(r"^[-_ ]{2,}|@", cleaned[index - 1]) else index
+            break
+        if re.search(
+            r"\b(?:notice of confidentiality|confidentiality notice|legal notice|disclaimer|"
+            r"attorney client privileged document|do not forward without permission|"
+            r"pursuant to treasury department circular 230|irs circular 230)\b",
+            lowered,
+        ):
+            cut = index
+            break
+        if re.search(
+            r"\b(?:the information (?:contained|in)|this (?:e-?mail|email|message|communication)|"
+            r"if you (?:are not|have received)|you are hereby notified)\b.{0,180}"
+            r"\b(?:confidential|privileged|intended|recipient|error|unauthorized|prohibited)\b",
+            lowered,
+        ):
+            cut = index
+            break
+        if re.search(
+            r"^(?:the information (?:contained|in)|this (?:e-?mail|email|message|communication) "
+            r"(?:and any|may contain|contains|is intended)|if you (?:are not|have received)|"
+            r"you are hereby notified|.*unauthorized use,?\s+disclosure or copying of this communication)\b",
+            lowered,
+        ):
+            cut = index
+            break
+
+    if cut == len(lines):
+        for index, line in enumerate(cleaned[max(0, len(cleaned) - 11):], max(0, len(cleaned) - 11)):
+            lowered = line.lower()
+            if re.fullmatch(
+                r"(?:\*?sent\*? (?:from|via) (?:my |the )?.{0,60}\b(?:iphone|ipad|android|blackberry|bb|mobile|wireless)\b.*\*?|"
+                r"sent from mailbox for iphone|enviado desde mi .+|from my sent iphone)[,.! ]*",
+                lowered,
+            ):
+                cut = index
+                break
+
+    if cut == len(lines):
+        for index, line in enumerate(cleaned[max(0, len(cleaned) - 11):], max(0, len(cleaned) - 11)):
+            lowered = line.lower()
+            if not re.fullmatch(r"(?:--+|-|_+)", lowered):
+                continue
+            cut = index
+            break
+
+    if cut == len(lines):
+        tail = cleaned[max(0, len(cleaned) - 11):]
+        contact_seen = any(
+            re.search(
+                r"@|https?://|www\.|\b(?:tel|fax|phone|mobile|cell|office|direct|founder|president|"
+                r"manager|director|esq|llc|ltd|inc|llp|p\.a\.|group|productions|management)\b|"
+                r"(?:\+?\d[\d(). -]{6,}\d)",
+                line.lower(),
+            )
+            for line in tail
+        )
+        if contact_seen:
+            for index, line in enumerate(tail, max(0, len(cleaned) - 11)):
+                if re.fullmatch(
+                    r"(?:best|best regards|kind regards|regards|sincerely|thanks|thank you|"
+                    r"cheers|warmly|yours truly)[,.! ]*",
+                    line.lower(),
+                ):
+                    cut = index
+                    break
+
+    stripped = "\n".join(lines[:cut]).strip()
+    return stripped or None
 
 
 def remove_attachment_payloads_expr(expr):
@@ -280,14 +392,35 @@ def remove_legal_disclaimers_expr(expr):
 def clean_body(expr):
     return (
         remove_legal_disclaimers_expr(
-            normalize_text(
+            normalize_body_lines_expr(
                 clean_quoted_printable_body_expr(remove_attachment_payloads_expr(expr.fill_null("")))
-                .str.replace_all(r"(?im)^(?:from|to|cc|bcc|sent|subject):[^\n]*$", " ")
+                .str.replace_all(r"(?im)^(?:from|to|cc|bcc|sent|date|subject):[^\n]*$", " ")
                 .str.replace_all(
-                    r"(?im)^[-_]{2,}.*forwarded message.*$|^this email and any attachments.*$|^please consider the environment.*$",
+                    r"(?im)^[-_]{2,}.*forwarded message.*$|^\*{0,2}\[?forwarded message\]?\*{0,2}.*$|^this email and any attachments.*$|^please consider the environment.*$",
                     " ",
                 )
             )
+            .map_elements(strip_email_footer, return_dtype=pl.String)
+        )
+        .str.replace_all(
+            r"(?is)(?:^|\s)On\s+(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\b.{1,220}\bwrote:.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?s)(?:^|\s)(?:\"[^\"\n]{1,160}\"(?:\s+<[^>\n]{1,200}>)?|[A-Z][A-Za-z0-9 .,_'@<>\-]{0,220})\s+wrote:.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)\bemail header \(partially visible\):\s*\"[^\"]{0,260}\bwrote:\"",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)^\s*wrote:\s+.*$",
+            " ",
+        )
+        .str.replace_all(
+            r"(?is)(?:^|[\s.>*_]+)\*?sent\*? (?:from|via) (?:my |the )?.{0,60}\b(?:iphone|ipad|android|blackberry|bb|mobile|wireless)\b.*$",
+            " ",
         )
         .str.replace_all(
             r"(?i)\b(?:confidential|privileged|intended|unauthorized|prohibited|disclosure|copying|attachments?|thereof|addressee|recipient|notify|destroy|return|error|unlawful)\b(?:\s+\b(?:confidential|privileged|intended|unauthorized|prohibited|disclosure|copying|attachments?|thereof|addressee|recipient|notify|destroy|return|error|unlawful)\b){5,}",
@@ -307,6 +440,11 @@ def clean_body(expr):
                 "original message": " ",
                 "forwarded by": " ",
                 "begin forwarded message": " ",
+                "[forwarded message]": " ",
+                "**forwarded message**": " ",
+                "forwarded message from": " ",
+                "note: forwarded message attached.": " ",
+                "be a better friend, newshound, and know-it-all with yahoo! mobile. try it now.": " ",
                 "do you yahoo!?": " ",
                 "don't pick lemons": " ",
                 "citrix sharefile": " ",

@@ -18,7 +18,12 @@ out_dir.mkdir(parents=True, exist_ok=True)
 sample_rows = int(os.environ.get("PREPROCESS_SAMPLE_ROWS", "0") or "0")
 
 def person_name_key_exprs(expr):
-    normalized = normalize_person_name_expr(expr)
+    name = (
+        pl.when(expr.str.contains(",", literal=True))
+        .then(expr.str.replace_all(r"^\s*([^,]{2,80}),\s*([^,<]+).*$", "${2} ${1}"))
+        .otherwise(expr)
+    )
+    normalized = normalize_person_name_expr(name)
     tokens = normalized.str.split(" ")
     first = tokens.list.first()
     last = tokens.list.last()
@@ -89,9 +94,10 @@ def unique_person_name_matches(people_frame):
     long = long_name_keys(keyed, ["person_id", "person_name"])
     return (
         long.join(
-            long.group_by("match_source", "person_name_key").len().filter(pl.col("len") == 1).select(
-                "match_source", "person_name_key"
-            ),
+            long.group_by("match_source", "person_name_key")
+            .agg(pl.col("person_id").n_unique().alias("person_count"))
+            .filter(pl.col("person_count") == 1)
+            .select("match_source", "person_name_key"),
             on=["match_source", "person_name_key"],
             how="inner",
         )
@@ -201,6 +207,26 @@ people_csv_emails = (
     .join(people.select("person_id", "person_name"), on="person_id", how="inner")
     .with_columns(pl.lit("people_csv_email").alias("alias_source"))
 )
+jmail_person_emails = (
+    pl.read_csv(input_dir / "jmail_person_emails.csv")
+    .select(
+        pl.col("slug").alias("person_id"),
+        canonicalize_email_expr(pl.col("email")).alias("email"),
+    )
+    .filter(pl.col("person_id").is_not_null() & pl.col("email").is_not_null())
+    .join(people.select("person_id", "person_name"), on="person_id", how="inner")
+    .with_columns(pl.lit("jmail_person_email").alias("alias_source"))
+)
+seed_person_emails = (
+    pl.read_csv(input_dir / "person_email_seed.csv")
+    .select(
+        "person_id",
+        canonicalize_email_expr(pl.col("email")).alias("email"),
+    )
+    .filter(pl.col("person_id").is_not_null() & pl.col("email").is_not_null())
+    .join(people.select("person_id", "person_name"), on="person_id", how="inner")
+    .with_columns(pl.lit("person_email_seed").alias("alias_source"))
+)
 
 person_name_matches = (
     pl.concat(
@@ -266,17 +292,6 @@ base = (
         .then(pl.col("year"))
         .otherwise(None)
         .alias("year"),
-        (
-            pl.col("id").cast(pl.String).fill_null("")
-            + pl.lit("||")
-            + pl.col("sender_normalized").fill_null("")
-            + pl.lit("||")
-            + pl.col("subject_clean").fill_null("")
-            + pl.lit("||")
-            + pl.col("sent_at").cast(pl.String).fill_null("")
-            + pl.lit("||")
-            + pl.col("text_clean").fill_null("").str.slice(0, 500)
-        ).alias("duplicate_signature"),
     )
 )
 
@@ -284,8 +299,6 @@ processed = base.collect()
 
 fact_emails = (
     processed.with_columns(
-        pl.col("duplicate_signature").is_duplicated().alias("duplicate_signature_flag"),
-        pl.col("id").is_duplicated().alias("duplicate_id_flag"),
         pl.col("subject_clean")
         .fill_null("")
         .str.replace_all(r"(?i)^\s*(?:re|fw|fwd)\s*:\s*", "")
@@ -307,8 +320,6 @@ fact_emails = (
         "text_clean",
         "text_char_len",
         "text_token_len",
-        "duplicate_id_flag",
-        "duplicate_signature_flag",
         "sender_redacted",
     )
 )
@@ -394,7 +405,21 @@ def infer_aliases(resolved_people, known_aliases):
 
 participant_name_matches = add_display_name_matches(participant_rows, person_name_matches)
 
-alias_map = people_csv_emails
+supplemental_email_aliases = (
+    pl.concat([jmail_person_emails, seed_person_emails], how="diagonal_relaxed")
+    .join(people_csv_emails.select("email"), on="email", how="anti")
+    .unique(subset=["person_id", "email"], keep="first")
+)
+supplemental_email_conflicts = (
+    supplemental_email_aliases.group_by("email")
+    .agg(pl.col("person_id").n_unique().alias("person_count"))
+    .filter(pl.col("person_count") > 1)
+)
+if supplemental_email_conflicts.height > 0:
+    supplemental_email_aliases = supplemental_email_aliases.join(
+        supplemental_email_conflicts.select("email"), on="email", how="anti"
+    )
+alias_map = pl.concat([people_csv_emails, supplemental_email_aliases], how="diagonal_relaxed")
 resolved_people = resolve_people(participant_name_matches, alias_map)
 
 for _ in range(3):

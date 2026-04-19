@@ -17,7 +17,9 @@ data/*
 !data/bridge_email_people.parquet
 !data/dim_people.parquet
 !data/famous_correspondents.csv
+!data/jmail_person_emails.csv
 !data/people.csv
+!data/person_email_seed.csv
 
 # Models
 models
