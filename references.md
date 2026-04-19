@@ -36,7 +36,8 @@ Source priority used to assemble the current master:
 
 - Original local source: `data/jmail_people.csv`.
 - Original URL pattern: `https://jmail.world/person/<slug>`.
-- Extra emails came from `data/jmail_person_emails.csv`, limited to personal-provider addresses during master construction.
+- Jmail rows are now carried in `people.csv`; preprocessing identifies them from the `url` column.
+- Extra emails from `data/jmail_person_emails.csv` were evaluated during master construction. Runtime preprocessing now uses only the consolidated `emails` values in `people.csv`.
 
 ### Epstein Document Archive
 

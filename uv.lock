@@ -571,7 +571,7 @@ wheels = [
 [[package]]
 name = "epstein"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "duckdb" },
@@ -2542,8 +2542,8 @@ name = "thinc-apple-ops"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
-    { name = "thinc" },
+    { name = "numpy", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "thinc", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0d/44/15fa7fd8c4f3011f29393a1aed7616b3991fb7562ef044a31a818c25558f/thinc_apple_ops-1.0.0.tar.gz", hash = "sha256:97238eb6693e758bfdcf1ac8e92c064bbe893ab74a6a3a4237c5bdf17318e502", size = 63163, upload-time = "2024-10-01T09:54:04.474Z" }
 wheels = [
