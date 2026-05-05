@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Epstein Email Corpus: Text Mining and Network Analysis</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #fbfaf7;
+      --ink: #18212b;
+      --muted: #5c6873;
+      --line: #d9d5cd;
+      --panel: rgba(255, 255, 255, 0.88);
+      --blue: #3d7ea6;
+      --green: #4ca58f;
+      --gold: #c47b28;
+      --rose: #b9577f;
+      font-family: Georgia, "Times New Roman", serif;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        linear-gradient(90deg, rgba(61, 126, 166, 0.08), transparent 36%),
+        radial-gradient(circle at 82% 12%, rgba(196, 123, 40, 0.13), transparent 32%),
+        var(--paper);
+    }
+
+    .site {
+      display: grid;
+      grid-template-columns: minmax(0, 0.94fr) minmax(420px, 0.9fr);
+      min-height: 100vh;
+    }
+
+    .report {
+      padding: 42px min(6vw, 72px) 72px;
+      max-width: 920px;
+      min-width: 0;
+    }
+
+    .graph-pane {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      border-left: 1px solid var(--line);
+      background: #f6f3ee;
+    }
+
+    .graph-pane iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--blue);
+      font: 700 12px/1.2 Arial, Helvetica, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: clamp(34px, 5vw, 64px);
+      line-height: 0.98;
+      letter-spacing: 0;
+      overflow-wrap: break-word;
+    }
+
+    h2 {
+      margin: 46px 0 14px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      font-size: 26px;
+      line-height: 1.15;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    p {
+      margin: 0 0 15px;
+      font-size: 17px;
+      line-height: 1.62;
+      overflow-wrap: anywhere;
+    }
+
+    .lead {
+      max-width: 760px;
+      font-size: 20px;
+      line-height: 1.5;
+      color: #27323c;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 28px 0 34px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .meta-card {
+      min-height: 88px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .meta-card strong {
+      display: block;
+      font-size: 23px;
+      line-height: 1;
+    }
+
+    .meta-card span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .question {
+      margin: 28px 0;
+      padding: 22px 24px;
+      border-left: 5px solid var(--gold);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 14px 40px rgba(44, 52, 60, 0.08);
+    }
+
+    .question p {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.36;
+      font-weight: 700;
+    }
+
+    .callout {
+      margin: 26px 0;
+      padding: 18px 20px;
+      border: 1px solid rgba(61, 126, 166, 0.24);
+      border-radius: 8px;
+      background: rgba(61, 126, 166, 0.08);
+    }
+
+    .callout p:last-child {
+      margin-bottom: 0;
+    }
+
+    ul {
+      margin: 0 0 18px;
+      padding-left: 22px;
+    }
+
+    li {
+      margin: 7px 0;
+      font-size: 16px;
+      line-height: 1.48;
+    }
+
+    table {
+      width: 100%;
+      margin: 20px 0 24px;
+      border-collapse: collapse;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    th,
+    td {
+      padding: 10px 11px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: #24313c;
+      font-weight: 700;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(76, 165, 143, 0.14);
+      color: #1d5b4f;
+      font: 700 12px/1 Arial, Helvetica, sans-serif;
+    }
+
+    .figure-note {
+      color: var(--muted);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .mobile-graph {
+      display: none;
+      height: 620px;
+      margin: 22px 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f6f3ee;
+    }
+
+    .mobile-graph iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    footer {
+      margin-top: 50px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1120px) {
+      .site {
+        display: block;
+      }
+
+      .report {
+        max-width: none;
+        padding: 30px 22px 56px;
+      }
+
+      .graph-pane {
+        display: none;
+      }
+
+      .mobile-graph {
+        display: block;
+      }
+
+      .meta {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .report {
+        padding: 30px 18px 52px;
+        width: 100%;
+        max-width: 354px;
+        overflow: hidden;
+      }
+
+      .eyebrow {
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      h1 {
+        font-size: 29px;
+        line-height: 1.04;
+        overflow-wrap: anywhere;
+      }
+
+      .lead {
+        font-size: 17px;
+        line-height: 1.55;
+      }
+
+      .question {
+        padding: 18px 18px 18px 20px;
+      }
+
+      .question p {
+        font-size: 19px;
+        line-height: 1.34;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+
+      .mobile-graph {
+        height: 560px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="site">
+    <article class="report">
+      <p class="eyebrow">Final Project Paper · Text Mining and Analysis</p>
+      <h1>Reading an Email Archive as Text and Network</h1>
+      <p class="lead">A reproducible analysis of the Epstein email corpus, combining text mining with communication-network analysis to identify the archive's main operational themes and the actors who structure its exchanges.</p>
+
+      <section class="meta" aria-label="Project summary">
+        <div class="meta-card"><strong>1.10M</strong><span>likely-English analysis emails after cleaning and filtering</span></div>
+        <div class="meta-card"><strong>1,224</strong><span>nodes in the full filtered co-presence network</span></div>
+        <div class="meta-card"><strong>155</strong><span>nodes shown in the interactive 3D distance-shell graph</span></div>
+      </section>
+
+      <div class="question">
+        <p>How can text mining and network analysis reveal the main communicative functions of the Epstein email corpus and the key actors who structured the communication network?</p>
+      </div>
+
+      <div class="mobile-graph" aria-label="Interactive 3D graph">
+        <iframe src="network_3d.html" title="Interactive 3D network graph"></iframe>
+      </div>
+
+      <h2>Introduction</h2>
+      <p>Email archives are rarely dramatic at first glance. They are made of routine coordination: meetings scheduled, flights arranged, invoices discussed, contacts copied, reminders forwarded, and short replies sent from phones. Yet precisely because email is mundane, it can reveal structures that more formal documents often hide. Repeated communication patterns show who coordinates work, who acts as a broker between groups, which topics dominate day-to-day operations, and how an organization or social network functions in practice. In this project, we use text mining and network science to study the Epstein email corpus as both a collection of documents and a communication network.</p>
+      <p>The Epstein case has major public, legal, and societal significance. Much public discussion focuses on individual names, events, and allegations. Our goal is different. We do not attempt to establish guilt, infer private intent, or make claims beyond the data. Instead, we analyze the released email corpus computationally to understand what kinds of communication the archive contains and how communication was structurally organized. This distinction is important: the corpus is not a complete record of all relationships, and an email connection is not proof of a real-world tie. However, aggregate patterns in a large corpus can still provide meaningful evidence about coordination, centrality, and thematic focus.</p>
+      <p>Our contribution is threefold. First, we produce a reproducible corpus construction pipeline that documents how raw email records are filtered, cleaned, and transformed into analysis-ready tables. Second, we provide interpretable text mining results that show which practical domains dominate the corpus. Third, we connect those textual findings to a network analysis of communication structure, showing how a small number of actors sit at the center of a much larger set of operational exchanges.</p>
+
+      <h2>Data and Corpus Construction</h2>
+      <p>The source data consists of cleaned email records, a person metadata table, and a bridge table linking emails to participants. The raw corpus contains 1,758,382 email rows. We remove rows with fewer than ten tokens, remove rows with visibly redacted senders, and apply a likely-English filter. The final analysis corpus contains 1,101,455 emails dated between 1990 and 2019, with a median length of 28 tokens.</p>
+      <p>For the network analysis, participants are linked through sender, recipient, cc, and bcc fields. Unknown and redacted actors are excluded from the main reported network summaries. This preserves enough structure for interpretation while preventing redacted placeholders from dominating centrality rankings. A separate data dictionary is maintained outside the report body, following the milestone feedback.</p>
+
+      <table>
+        <thead>
+          <tr><th>Corpus step</th><th>Rows</th><th>Interpretation</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Raw email rows</td><td>1,758,382</td><td>All available email rows before analysis filtering.</td></tr>
+          <tr><td>10+ token rows</td><td>1,197,760</td><td>Removes empty or extremely short rows that are weak text-mining units.</td></tr>
+          <tr><td>After redacted-sender filter</td><td>1,103,480</td><td>Removes rows where sender metadata is visibly redacted.</td></tr>
+          <tr><td>Likely-English analysis corpus</td><td>1,101,455</td><td>Main corpus used for the text mining and final reported results.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Methods</h2>
+      <p>The text-mining pipeline represents each email through tokenized text after removing common email artifacts and high-frequency boilerplate. We use count-based term frequencies, TF-IDF scores, non-negative matrix factorization topics, and keyword theme coverage. These methods are deliberately interpretable: they help describe the corpus in terms that can be checked against the underlying text.</p>
+      <p>The network pipeline constructs an undirected co-presence graph. Two actors are connected when they appear in the same email as sender or recipient participants. Edge weights count repeated co-presence. We use degree, weighted degree, and betweenness to identify actors who are broadly connected or structurally important. The interactive graph on this page displays a readable subset of the filtered network using distance shells around Jeffrey Epstein.</p>
+
+      <div class="callout">
+        <p><strong>How to read the 3D graph:</strong> Epstein is the gold center node. Green nodes are one network step away, blue nodes are two steps away, purple nodes are three steps away, and pink nodes are four or more steps away. A network step means shortest-path distance in the email co-presence graph, not proof of a personal relationship.</p>
+      </div>
+
+      <h2>Results</h2>
+      <h3>Text mining shows an operational archive</h3>
+      <p>The strongest theme in the corpus is not a single scandal-related keyword. Instead, the archive is dominated by operational coordination. Meetings and scheduling appear in 18.78% of analyzed emails, followed by travel and logistics at 10.43%, finance and assets at 8.46%, media and reputation at 3.71%, and legal or investigative language at 3.31%.</p>
+      <table>
+        <thead>
+          <tr><th>Theme</th><th>Documents</th><th>Share of corpus</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Meetings and scheduling</td><td>206,843</td><td>18.78%</td></tr>
+          <tr><td>Travel and logistics</td><td>114,917</td><td>10.43%</td></tr>
+          <tr><td>Finance and assets</td><td>93,179</td><td>8.46%</td></tr>
+          <tr><td>Media and reputation</td><td>40,916</td><td>3.71%</td></tr>
+          <tr><td>Legal and investigation</td><td>36,473</td><td>3.31%</td></tr>
+        </tbody>
+      </table>
+
+      <h3>The communication network is highly centralized</h3>
+      <p>The filtered co-presence network contains 1,224 nodes and 5,426 edges. Jeffrey Epstein is the dominant broker in the network, but the structure also highlights the role of intermediaries such as Lesley Groff, Richard Kahn, Stewart Oldfield, Brad Edwards, and other operational or legal contacts. This suggests that the archive is organized around a small number of actors who connect otherwise separate logistical, financial, legal, and personal communication clusters.</p>
+      <p>The 3D graph keeps the same interpretation but makes the structure navigable. The visualized subset contains 155 nodes and 900 links. It is not the full network; it is a readable distance-shell view centered on Epstein, designed for exploration while reading the report.</p>
+
+      <h2>Discussion</h2>
+      <p>The results suggest that the Epstein email corpus is best understood as a communication infrastructure archive. Text mining shows that practical coordination dominates the corpus. Network analysis shows that this coordination is not evenly distributed: it is concentrated around Epstein and a set of intermediaries who connect many otherwise separate actors.</p>
+      <p>There are important limitations. Email co-presence is not the same as a verified social relationship. The corpus may be incomplete, redactions affect both text and metadata, and entity resolution can introduce errors. The English-language focus improves interpretability but excludes non-English material. These limitations mean that the results should be read as evidence about the structure of the released email corpus, not as a complete map of real-world relationships.</p>
+
+      <h2>Responsible AI and LLM Use</h2>
+      <p>LLMs were used to support coding, report planning, and wording. The analysis outputs were generated by local scripts and checked manually against produced CSV and graph artifacts. The workflow avoided using LLMs to invent facts, identify guilt, or infer private intent. Sensitive claims are limited to aggregate corpus and network patterns.</p>
+
+      <h2>Conclusion</h2>
+      <p>The research question can be answered directly: text mining reveals that the corpus is primarily about operational coordination, while network analysis reveals that this coordination is centered around Epstein and a small group of important intermediaries. The combination of methods is stronger than either method alone. Text mining explains what the archive is mostly used for; network analysis explains who structures that communication.</p>
+      <p>Next steps include stronger language detection, manual validation of entity-resolution decisions, temporal network analysis, supervised theme classification, and a more complete comparison between email co-presence and known external relationship data.</p>
+
+      <h2>Tasks and Responsibilities</h2>
+      <table>
+        <thead>
+          <tr><th>Task</th><th>Responsibility</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Corpus construction and cleaning</td><td>Data preprocessing team</td></tr>
+          <tr><td>Text mining and theme analysis</td><td>Text analysis team</td></tr>
+          <tr><td>Network construction and visualization</td><td>Network analysis team</td></tr>
+          <tr><td>Report writing and interpretation</td><td>All team members</td></tr>
+        </tbody>
+      </table>
+
+      <footer>
+        <p><span class="tag">Interactive artifact</span> This website is a companion draft for the final project paper. The graph is generated from the filtered MS3 network outputs and is intended for exploration, not as standalone evidence of real-world relationships.</p>
+      </footer>
+    </article>
+
+    <aside class="graph-pane" aria-label="Interactive 3D graph">
+      <iframe src="network_3d.html" title="Interactive 3D network graph"></iframe>
+    </aside>
+  </main>
+</body>
+</html>
