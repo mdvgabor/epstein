@@ -38,6 +38,33 @@
       box-sizing: border-box;
       box-shadow: 0 18px 50px rgba(54, 64, 74, 0.18);
     }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-toggle {
+      flex: 0 0 auto;
+      min-width: 92px;
+      height: 30px;
+      padding: 0 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .panel.collapsed {
+      width: auto;
+      max-width: calc(100vw - 36px);
+      padding: 10px 12px;
+    }
+    .panel.collapsed .panel-body {
+      display: none;
+    }
+    .panel.collapsed h1 {
+      margin: 0;
+      font-size: 14px;
+      white-space: nowrap;
+    }
     h1 {
       margin: 0 0 8px;
       font-size: 18px;
@@ -180,26 +207,31 @@
 <body>
   <canvas id="scene"></canvas>
   <section class="panel">
-    <h1>Epstein Email Network</h1>
-    <div class="stats">
-      <div class="stat"><b id="node-count">0</b><span>nodes</span></div>
-      <div class="stat"><b id="link-count">0</b><span>edges</span></div>
-      <div class="stat"><b>3D</b><span>orbit view</span></div>
+    <div class="panel-header">
+      <h1>Epstein Email Network</h1>
+      <button id="toggle-panel" class="panel-toggle" type="button" aria-expanded="true">Hide controls</button>
     </div>
-    <div class="controls">
-      <label>Node size <input id="node-scale" type="range" min="60" max="180" value="100"><span id="node-scale-value">100</span></label>
-      <label>Edge opacity <input id="edge-opacity" type="range" min="5" max="75" value="42"><span id="edge-opacity-value">42</span></label>
-      <label>Label size <input id="label-size" type="range" min="55" max="170" value="126"><span id="label-size-value">126</span></label>
-      <button id="reset-view" type="button">Reset view</button>
+    <div class="panel-body">
+      <div class="stats">
+        <div class="stat"><b id="node-count">0</b><span>nodes</span></div>
+        <div class="stat"><b id="link-count">0</b><span>edges</span></div>
+        <div class="stat"><b>3D</b><span>orbit view</span></div>
+      </div>
+      <div class="controls">
+        <label>Node size <input id="node-scale" type="range" min="60" max="180" value="100"><span id="node-scale-value">100</span></label>
+        <label>Edge opacity <input id="edge-opacity" type="range" min="5" max="75" value="42"><span id="edge-opacity-value">42</span></label>
+        <label>Label size <input id="label-size" type="range" min="55" max="170" value="126"><span id="label-size-value">126</span></label>
+        <button id="reset-view" type="button">Reset view</button>
+      </div>
+      <div class="legend">
+        <div class="legend-row"><span class="swatch" style="background:#f4b860"></span><span>Epstein, largest node</span></div>
+        <div class="legend-row"><span class="swatch" style="background:#64c7b2"></span><span>1 network step from Epstein</span></div>
+        <div class="legend-row"><span class="swatch" style="background:#5aa7e8"></span><span>2 network steps from Epstein</span></div>
+        <div class="legend-row"><span class="swatch" style="background:#9b7ee8"></span><span>3 network steps from Epstein</span></div>
+        <div class="legend-row"><span class="swatch" style="background:#d76f9a"></span><span>4+ network steps from Epstein</span></div>
+      </div>
+      <p class="hint">Drag to rotate. Scroll to zoom. Right-drag to pan. Shells, colors, and node size show shortest-path distance from Epstein.</p>
     </div>
-    <div class="legend">
-      <div class="legend-row"><span class="swatch" style="background:#f4b860"></span><span>Epstein, largest node</span></div>
-      <div class="legend-row"><span class="swatch" style="background:#64c7b2"></span><span>1 network step from Epstein</span></div>
-      <div class="legend-row"><span class="swatch" style="background:#5aa7e8"></span><span>2 network steps from Epstein</span></div>
-      <div class="legend-row"><span class="swatch" style="background:#9b7ee8"></span><span>3 network steps from Epstein</span></div>
-      <div class="legend-row"><span class="swatch" style="background:#d76f9a"></span><span>4+ network steps from Epstein</span></div>
-    </div>
-    <p class="hint">Drag to rotate. Scroll to zoom. Right-drag to pan. Shells, colors, and node size show shortest-path distance from Epstein.</p>
   </section>
   <div id="tooltip"></div>
 
@@ -389,6 +421,18 @@
 
     document.getElementById("node-count").textContent = data.metadata.nodes.toLocaleString();
     document.getElementById("link-count").textContent = data.metadata.links.toLocaleString();
+
+    const panel = document.querySelector(".panel");
+    const togglePanel = document.getElementById("toggle-panel");
+    function setPanelCollapsed(collapsed) {
+      panel.classList.toggle("collapsed", collapsed);
+      togglePanel.textContent = collapsed ? "Show controls" : "Hide controls";
+      togglePanel.setAttribute("aria-expanded", String(!collapsed));
+    }
+    togglePanel.addEventListener("click", () => {
+      setPanelCollapsed(!panel.classList.contains("collapsed"));
+    });
+    setPanelCollapsed(window.self !== window.top || new URLSearchParams(window.location.search).get("panel") === "collapsed");
 
     for (const id of ["node-scale", "edge-opacity", "label-size"]) {
       const input = document.getElementById(id);
