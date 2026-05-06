@@ -120,7 +120,7 @@ title: Reading an Email Archive as Text and Network
 **Group:** Gepallatok  
 **Team members:** Bernath Mate, Kossuth Hugo, Medvegy Gabor, Salomon Bruno  
 **Date:** May 2026  
-**Project artifact:** [Homepage version](./) and [3D network graph](./network_3d.html)
+**Project artifact:** [3D network graph](./network_3d.html) and [standalone report copy](./report.html)
 
 ## Abstract
 
