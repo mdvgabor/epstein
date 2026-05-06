@@ -14,6 +14,14 @@ title: Reading an Email Archive as Text and Network
   .wrapper {
     max-width: none;
   }
+  .container-lg.markdown-body {
+    max-width: none;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .container-lg.markdown-body > h1:first-child {
+    display: none;
+  }
   .paper-shell {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(420px, 0.72fr);
