@@ -6,6 +6,13 @@ title: Reading an Email Archive as Text and Network
   :root {
     color-scheme: light;
   }
+  * {
+    box-sizing: border-box;
+  }
+  html,
+  body {
+    overflow-x: hidden;
+  }
   body {
     margin: 0;
     background:
@@ -209,6 +216,30 @@ title: Reading an Email Archive as Text and Network
     table {
       display: block;
       overflow-x: auto;
+    }
+  }
+  @media (max-width: 700px) {
+    h1 {
+      font-size: 34px;
+      line-height: 1.08;
+    }
+    h2 {
+      font-size: 24px;
+    }
+    p,
+    li {
+      font-size: 16.5px;
+      line-height: 1.62;
+    }
+    .rail-title {
+      font-size: 23px;
+      line-height: 1.12;
+    }
+    .paper {
+      padding: 30px 18px 56px;
+    }
+    .paper iframe {
+      height: 520px !important;
     }
   }
 </style>
