@@ -232,7 +232,7 @@ title: Reading an Email Archive as Text and Network
       min-width: 0;
     }
     h1 {
-      font-size: 29px;
+      font-size: 25px;
       line-height: 1.08;
       overflow-wrap: anywhere;
     }
