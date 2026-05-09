@@ -283,7 +283,7 @@ title: Reading an Email Archive as Text and Network
 </aside>
 <article class="paper" markdown="1">
 
-# Reading an Email Archive as Text and Network
+# Reading an Email<br>Archive as Text<br>and Network
 
 **Course:** Text Mining and Analysis  
 **Group:** Gepallatok  
