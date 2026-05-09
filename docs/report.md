@@ -23,26 +23,12 @@ title: Reading an Email Archive as Text and Network
     display: none;
   }
   .paper-shell {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(420px, 0.72fr);
     min-height: 100vh;
   }
   .paper {
     max-width: 940px;
+    margin: 0 auto;
     padding: 46px min(6vw, 76px) 80px;
-  }
-  .graph-side {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    border-left: 1px solid #d9d5cd;
-    background: #f6f3ee;
-  }
-  .graph-side iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-    display: block;
   }
   h1 {
     margin-top: 0;
@@ -83,34 +69,14 @@ title: Reading an Email Archive as Text and Network
     border: 1px solid #d9d5cd;
     background: white;
   }
-  .mobile-graph {
-    display: none;
-    height: 620px;
-    border: 1px solid #d9d5cd;
-    margin: 22px 0;
-  }
-  .mobile-graph iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-  }
   .note {
     padding: 14px 16px;
     border-left: 4px solid #c47b28;
     background: rgba(255, 255, 255, 0.72);
   }
   @media (max-width: 1100px) {
-    .paper-shell {
-      display: block;
-    }
     .paper {
       padding: 32px 20px 64px;
-    }
-    .graph-side {
-      display: none;
-    }
-    .mobile-graph {
-      display: block;
     }
     table {
       display: block;
@@ -133,10 +99,6 @@ title: Reading an Email Archive as Text and Network
 ## Abstract
 
 This project analyzes the Epstein email corpus as both a textual archive and a communication network, following earlier work that treats released email collections as analyzable organizational records (Diesner et al., 2005; Klimt & Yang, 2004). The final analysis corpus contains 1,101,455 likely-English emails after filtering very short rows, visibly redacted senders, and likely non-English material. We combine interpretable text-mining methods, including term frequencies, TF-IDF, keyword-defined communication functions, and non-negative matrix factorization, with an email co-presence network built from sender, recipient, cc, and bcc metadata (Blei et al., 2003; Freeman, 1978; Lee & Seung, 1999). The main result is that the archive is dominated by operational coordination rather than a single scandal-specific vocabulary: meetings and scheduling appear in 18.78% of analyzed emails, travel and logistics in 10.43%, and finance/assets in 8.46%. The filtered co-presence network contains 1,224 nodes and 5,426 edges and is highly centralized around Jeffrey Epstein and a small set of intermediaries. These findings suggest that the released email archive is best understood as a communication infrastructure archive: it records routine coordination, and that coordination is structurally concentrated around a small number of actors.
-
-<div class="mobile-graph">
-  <iframe src="./network_3d.html" title="Interactive 3D Epstein email network"></iframe>
-</div>
 
 ## 1. Introduction
 
@@ -360,7 +322,4 @@ Pokorny, L. (2026). *Social network analysis of Jeffrey Epstein and other elite 
 Wilomentena. (2026). *Epstein files - Persons of interest list* [Data set]. Kaggle. https://www.kaggle.com/datasets/wilomentena/epstein-list-persons-of-interest
 </article>
 
-<aside class="graph-side">
-  <iframe src="./network_3d.html" title="Interactive 3D Epstein email network"></iframe>
-</aside>
 </div>
