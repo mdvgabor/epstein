@@ -42,6 +42,9 @@ title: Reading an Email Archive as Text and Network
     min-height: 100vh;
     padding: 28px clamp(18px, 3vw, 42px) 64px;
   }
+  .paper-shell > * {
+    min-width: 0;
+  }
   .paper {
     background: rgba(255, 252, 246, 0.9);
     border: 1px solid rgba(119, 111, 94, 0.24);
@@ -219,9 +222,19 @@ title: Reading an Email Archive as Text and Network
     }
   }
   @media (max-width: 700px) {
+    .paper-shell,
+    .site-rail,
+    .insight-rail,
+    .paper,
+    .rail-panel {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
     h1 {
-      font-size: 34px;
+      font-size: 29px;
       line-height: 1.08;
+      overflow-wrap: anywhere;
     }
     h2 {
       font-size: 24px;
@@ -248,7 +261,7 @@ title: Reading an Email Archive as Text and Network
 <aside class="site-rail" markdown="1">
 <div class="rail-panel">
   <p class="rail-kicker">MS3 Final Paper</p>
-  <p class="rail-title">Text mining meets network structure.</p>
+  <p class="rail-title">Text mining<br>meets network<br>structure.</p>
   <div class="rail-links">
     <a href="#abstract">Abstract</a>
     <a href="#1-introduction">Introduction</a>
