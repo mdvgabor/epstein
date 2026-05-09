@@ -3,11 +3,17 @@ title: Reading an Email Archive as Text and Network
 ---
 
 <style>
+  :root {
+    color-scheme: light;
+  }
   body {
     margin: 0;
-    background: #fbfaf7;
+    background:
+      linear-gradient(90deg, rgba(26, 76, 93, 0.06), transparent 25%, transparent 75%, rgba(188, 93, 55, 0.08)),
+      repeating-linear-gradient(0deg, rgba(25, 37, 46, 0.03) 0, rgba(25, 37, 46, 0.03) 1px, transparent 1px, transparent 32px),
+      #f7f3ea;
     color: #18212b;
-    font-family: "Times New Roman", Times, serif;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
   main,
   .page-content,
@@ -23,59 +29,181 @@ title: Reading an Email Archive as Text and Network
     display: none;
   }
   .paper-shell {
+    display: grid;
+    grid-template-columns: minmax(190px, 0.64fr) minmax(0, 900px) minmax(190px, 0.64fr);
+    gap: clamp(20px, 3vw, 42px);
     min-height: 100vh;
+    padding: 28px clamp(18px, 3vw, 42px) 64px;
   }
   .paper {
-    max-width: 940px;
-    margin: 0 auto;
-    padding: 46px min(6vw, 76px) 80px;
+    background: rgba(255, 252, 246, 0.9);
+    border: 1px solid rgba(119, 111, 94, 0.24);
+    box-shadow: 0 24px 80px rgba(24, 33, 43, 0.09);
+    padding: 52px clamp(30px, 5vw, 72px) 84px;
   }
   h1 {
     margin-top: 0;
-    font-size: 42px;
-    line-height: 1.05;
+    max-width: 760px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(42px, 5.4vw, 74px);
+    line-height: 0.96;
+    letter-spacing: 0;
+    color: #111922;
   }
   h2 {
-    margin-top: 38px;
-    padding-top: 12px;
-    border-top: 1px solid #d9d5cd;
-    font-size: 26px;
+    margin-top: 48px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(119, 111, 94, 0.28);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 29px;
+    letter-spacing: 0;
   }
   h3 {
-    margin-top: 24px;
+    margin-top: 28px;
     font-size: 20px;
+    color: #1a4c5d;
   }
   p,
   li {
-    font-size: 17px;
-    line-height: 1.55;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 18px;
+    line-height: 1.68;
+  }
+  a {
+    color: #126782;
+    text-decoration-color: rgba(18, 103, 130, 0.35);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    margin: 18px 0 24px;
+    margin: 20px 0 28px;
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 13px;
+    font-size: 13.5px;
+    background: #fffdf8;
+    border: 1px solid rgba(119, 111, 94, 0.22);
   }
   th,
   td {
-    border-bottom: 1px solid #d9d5cd;
-    padding: 8px 9px;
+    border-bottom: 1px solid rgba(119, 111, 94, 0.22);
+    padding: 10px 11px;
     text-align: left;
     vertical-align: top;
   }
+  th {
+    background: #efe7d8;
+    color: #18212b;
+  }
   img {
     max-width: 100%;
-    border: 1px solid #d9d5cd;
+    border: 1px solid rgba(119, 111, 94, 0.28);
     background: white;
+    box-shadow: 0 14px 34px rgba(24, 33, 43, 0.08);
   }
   .note {
-    padding: 14px 16px;
-    border-left: 4px solid #c47b28;
-    background: rgba(255, 255, 255, 0.72);
+    padding: 18px 20px;
+    border-left: 5px solid #bc5d37;
+    background: #fff8ea;
+    box-shadow: inset 0 0 0 1px rgba(188, 93, 55, 0.14);
+  }
+  .paper iframe {
+    border: 1px solid rgba(119, 111, 94, 0.28) !important;
+    box-shadow: 0 18px 46px rgba(24, 33, 43, 0.12);
+    background: #fffdf8;
+  }
+  .site-rail,
+  .insight-rail {
+    align-self: start;
+    position: sticky;
+    top: 24px;
+    display: grid;
+    gap: 16px;
+  }
+  .rail-panel {
+    border: 1px solid rgba(119, 111, 94, 0.22);
+    background: rgba(255, 252, 246, 0.72);
+    box-shadow: 0 18px 52px rgba(24, 33, 43, 0.07);
+    padding: 18px;
+  }
+  .rail-kicker {
+    margin: 0 0 12px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8a4f2c;
+  }
+  .rail-title {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 25px;
+    line-height: 1.08;
+    color: #111922;
+  }
+  .rail-links {
+    display: grid;
+    gap: 9px;
+    margin-top: 14px;
+  }
+  .rail-links a,
+  .rail-link {
+    display: block;
+    border-left: 3px solid #1a4c5d;
+    padding: 7px 0 7px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-decoration: none;
+  }
+  .metric {
+    border-left: 4px solid #d79b35;
+    padding-left: 12px;
+  }
+  .metric + .metric {
+    margin-top: 16px;
+  }
+  .metric strong {
+    display: block;
+    font-size: 25px;
+    line-height: 1;
+    color: #111922;
+  }
+  .metric span {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #4b5560;
+  }
+  .rail-note {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #34424d;
   }
   @media (max-width: 1100px) {
+    .paper-shell {
+      display: block;
+      padding: 0;
+    }
+    .site-rail,
+    .insight-rail {
+      position: static;
+      display: block;
+      padding: 18px 20px 0;
+    }
+    .insight-rail {
+      padding-top: 0;
+    }
+    .rail-panel {
+      margin-bottom: 14px;
+    }
     .paper {
+      border-left: 0;
+      border-right: 0;
+      box-shadow: none;
       padding: 32px 20px 64px;
     }
     table {
@@ -86,6 +214,29 @@ title: Reading an Email Archive as Text and Network
 </style>
 
 <div class="paper-shell">
+<aside class="site-rail" markdown="1">
+<div class="rail-panel">
+  <p class="rail-kicker">MS3 Final Paper</p>
+  <p class="rail-title">Text mining meets network structure.</p>
+  <div class="rail-links">
+    <a href="#abstract">Abstract</a>
+    <a href="#1-introduction">Introduction</a>
+    <a href="#2-data-and-corpus-construction">Data and Corpus</a>
+    <a href="#3-methods">Methods</a>
+    <a href="#4-results">Results</a>
+    <a href="#5-discussion">Discussion</a>
+  </div>
+</div>
+<div class="rail-panel">
+  <p class="rail-kicker">Artifacts</p>
+  <div class="rail-links">
+    <a href="./network_3d.html">Open full 3D graph</a>
+    <a href="./ms3_key_corpus_statistics.html">Corpus statistics</a>
+    <a href="./ms3_data_dictionary.html">Data dictionary</a>
+    <a href="./ms3_network_settings.html">Network settings</a>
+  </div>
+</div>
+</aside>
 <article class="paper" markdown="1">
 
 # Reading an Email Archive as Text and Network
@@ -322,4 +473,33 @@ Pokorny, L. (2026). *Social network analysis of Jeffrey Epstein and other elite 
 Wilomentena. (2026). *Epstein files - Persons of interest list* [Data set]. Kaggle. https://www.kaggle.com/datasets/wilomentena/epstein-list-persons-of-interest
 </article>
 
+<aside class="insight-rail" markdown="1">
+<div class="rail-panel">
+  <p class="rail-kicker">Core Result</p>
+  <div class="metric">
+    <strong>1,101,455</strong>
+    <span>likely-English emails in the final text-mining corpus</span>
+  </div>
+  <div class="metric">
+    <strong>1,224</strong>
+    <span>actors in the filtered co-presence network</span>
+  </div>
+  <div class="metric">
+    <strong>5,426</strong>
+    <span>repeated co-presence edges after filtering</span>
+  </div>
+</div>
+<div class="rail-panel">
+  <p class="rail-kicker">Reading Guide</p>
+  <p class="rail-note">Use the report text for the argument, the embedded graph for exploration, and the companion files for reproducibility details that would be too long for the final paper.</p>
+</div>
+<div class="rail-panel">
+  <p class="rail-kicker">Companion Files</p>
+  <div class="rail-links">
+    <a href="./ms3_text_model_settings.html">Text model settings</a>
+    <a href="./ms3_nmf_topic_table.html">NMF topic table</a>
+    <a href="./">Homepage version</a>
+  </div>
+</div>
+</aside>
 </div>
