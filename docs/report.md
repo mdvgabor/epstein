@@ -85,6 +85,11 @@ title: Reading an Email Archive as Text and Network
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
   }
+  .anchor-target {
+    display: block;
+    height: 0;
+    scroll-margin-top: 28px;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -263,12 +268,12 @@ title: Reading an Email Archive as Text and Network
   <p class="rail-kicker">MS3 Final Paper</p>
   <p class="rail-title">Text mining<br>meets network<br>structure.</p>
   <div class="rail-links">
-    <a href="#abstract">Abstract</a>
-    <a href="#1-introduction">Introduction</a>
-    <a href="#2-data-and-corpus-construction">Data and Corpus</a>
-    <a href="#3-methods">Methods</a>
-    <a href="#4-results">Results</a>
-    <a href="#5-discussion">Discussion</a>
+    <a href="#section-abstract">Abstract</a>
+    <a href="#section-introduction">Introduction</a>
+    <a href="#section-data">Data and Corpus</a>
+    <a href="#section-methods">Methods</a>
+    <a href="#section-results">Results</a>
+    <a href="#section-discussion">Discussion</a>
   </div>
 </div>
 <div class="rail-panel">
@@ -291,26 +296,29 @@ title: Reading an Email Archive as Text and Network
 **Date:** May 2026  
 **Project artifact:** [Homepage version](./) and [3D network graph](./network_3d.html)
 
+<span id="section-abstract" class="anchor-target"></span>
 ## Abstract
 
 This project analyzes the Epstein email corpus as both a textual archive and a communication network, following earlier work that treats released email collections as analyzable organizational records (Diesner et al., 2005; Klimt & Yang, 2004). The final analysis corpus contains 1,101,455 likely-English emails after filtering very short rows, visibly redacted senders, and likely non-English material. We combine interpretable text-mining methods, including term frequencies, TF-IDF, keyword-defined communication functions, and non-negative matrix factorization, with an email co-presence network built from sender, recipient, cc, and bcc metadata (Blei et al., 2003; Freeman, 1978; Lee & Seung, 1999). The main result is that the archive is dominated by operational coordination rather than a single scandal-specific vocabulary: meetings and scheduling appear in 18.78% of analyzed emails, travel and logistics in 10.43%, and finance/assets in 8.46%. The filtered co-presence network contains 1,224 nodes and 5,426 edges and is highly centralized around Jeffrey Epstein and a small set of intermediaries. These findings suggest that the released email archive is best understood as a communication infrastructure archive: it records routine coordination, and that coordination is structurally concentrated around a small number of actors.
 
+<span id="section-introduction" class="anchor-target"></span>
 ## 1. Introduction
 
-Email archives are often treated as administrative residue: routine messages about meetings, travel, payments, introductions, reminders, and forwarded documents. Yet precisely because email records everyday coordination, large email corpora can reveal patterns that are difficult to observe in formal reports or public narratives. The Enron corpus, for example, became important because it showed that released email collections can be studied as both text and organizational communication data (Klimt & Yang, 2004). Email archives show not only what topics recur, but also how communication is organized: who appears repeatedly, who connects otherwise separate groups, and which practical functions dominate the flow of information. This project studies the Epstein email corpus from that perspective. Rather than treating the archive as a list of names or isolated messages, we analyze it as a large textual and relational dataset whose structure can be examined through text mining and network analysis.
+Recent high-profile cases involving elite sexual exploitation and trafficking have drawn renewed attention to how abuse can be organized through personal, financial, and social networks. While sex trafficking is widely recognized as a major global social problem, less is known about how high-net-worth individuals coordinate private exploitation networks that differ from purely commercial trafficking enterprises while still overlapping with them in important organizational ways (Volscho, 2025). One of the most well-known cases is connected to Jeffrey Epstein. Epstein pleaded guilty in Florida in 2008 to felony solicitation of prostitution and procurement of minors for prostitution, and he later faced federal sex-trafficking charges in 2019. Public authorities, journalists, researchers, and civil society organizations have continued to examine released materials in order to understand the broader structure of communication, influence, and facilitation around the case.
 
-The broader context of the project is the public importance of the Epstein case and the continuing release, indexing, and analysis of documents connected to it. The corpus is socially sensitive: it concerns a case involving serious criminal allegations, elite networks, institutional failure, and public accountability. Prior social-network research on conspiracy and illicit coordination emphasizes that hidden or high-risk activity can depend on both strong central actors and bridging ties across otherwise separate parts of a network (Baker & Faulkner, 1993; Granovetter, 1973). For that reason, our goal is not to infer guilt, intention, or real-world relationships from email metadata alone. Instead, we ask a more limited but empirically answerable question: what communicative functions does the released email archive contain, and how are these communications structurally organized? This distinction matters because an email connection is not the same as a personal relationship, and absence from the corpus is not evidence of absence from the broader case. However, when analyzed carefully and transparently, aggregate email patterns can still provide useful evidence about coordination, centrality, brokerage, and thematic focus within the archive.
+The recent public release and indexing of Epstein-related documents has created a large but fragmented archive. In February 2025, the U.S. Department of Justice released a first phase of Epstein-related files, and further large-scale releases followed under the Epstein Files Transparency Act, including a January 2026 publication of over three million additional pages (U.S. Department of Justice, 2025, 2026). Alongside these official releases, searchable public archives such as Jmail have made email records easier to inspect computationally. Email archives are often administrative residue: routine messages about meetings, travel, payments, introductions, reminders, and forwarded documents. However, precisely because email records everyday coordination, a large email corpus can reveal patterns that are difficult to observe in formal reports, court documents, or public narratives alone.
 
-Our approach builds on two related research traditions. First, computational text analysis has long used document representations such as bag-of-words, term frequency, TF-IDF, and topic models to identify recurring themes in large corpora (Blei et al., 2003; Pedregosa et al., 2011). Methods such as non-negative matrix factorization are especially useful when interpretability matters, because they represent documents through additive topic-like components that can be inspected through their highest-weighted terms (Lee & Seung, 1999). Second, social network analysis provides tools for studying relational structure, including degree, weighted degree, betweenness centrality, communities, and shortest-path distance. Classic work on centrality emphasizes that important actors are not only those with many connections, but also those positioned between otherwise separated parts of a network (Freeman, 1978).
+The Enron corpus, for example, became important because it showed that released email collections can be studied as both text and organizational communication data (Klimt & Yang, 2004). Email archives show not only what topics recur, but also how communication is organized: who appears repeatedly, who connects otherwise separate groups, and which practical functions dominate the flow of information. Network analysis and text mining can help uncover complex structures, identify influential actors, and describe recurring themes in large communication datasets. Previous work on email archives demonstrates that communication metadata can expose organizational structure, especially when messages are transformed into communication networks (Diesner et al., 2005). In the Epstein email corpus, these methods can support public understanding by transforming a large and fragmented dataset into interpretable textual and relational patterns.
 
-This project adds to the existing literature by applying a combined text-mining and network-science framework to the Epstein email corpus specifically. Previous work on email archives demonstrates that communication data can expose organizational structure, especially when message metadata is transformed into communication networks (Diesner et al., 2005). Existing Epstein-focused public resources and research provide searchable documents, named entities, investigative context, and broader facilitation-network comparisons (Pokorny, 2026). Our contribution is to connect these perspectives in a reproducible analysis pipeline. We construct a cleaned analysis corpus, remove unknown and redacted actors from the main network summaries, filter to likely English-language emails for interpretable text analysis, and produce both statistical outputs and an interactive 3D network visualization. The result is not simply a descriptive list of frequent words or central names. Instead, it is an integrated account of what the corpus is mostly about and who structures its communication patterns.
+The goal of this project is not to infer guilt, assign responsibility, or prove real-world relationships from email metadata alone. Instead, the project asks what communicative functions appear in the released email corpus and how those communications are structurally organized. This distinction is important because an email co-presence edge means that two actors appeared in the same email metadata, not that they necessarily had a close social relationship or shared intent. The project therefore treats the corpus as evidence about the released archive itself: what kinds of coordination it records, which actors are structurally central within it, and how text-mining and network-science methods can be combined to describe these patterns cautiously.
 
-The central research question is:
+Our research question is:
 
 <p class="note"><strong>How can text mining and network analysis reveal the main communicative functions of the Epstein email corpus and the key actors who structured the communication network?</strong></p>
 
-The motivation for the project is both methodological and substantive. Methodologically, the corpus is a useful case for demonstrating how text mining and network science complement each other. Word-level analysis alone can show that certain themes are frequent, but it cannot show which actors connect those themes across the communication network. Network analysis alone can identify central actors, but it cannot explain what types of communication make those actors central. Combining the two approaches gives a fuller account of the archive. Substantively, the project contributes a cautious, reproducible, and interpretable analysis of a public-interest dataset where overclaiming would be especially harmful.
+This project adds to the existing literature by applying a combined text-mining and network-science framework to the Epstein email corpus specifically. Word-level analysis can show that certain themes recur, but it cannot show which actors connect those themes across the network. Centrality analysis can identify structurally important actors, but it cannot explain what kinds of communication make them central. Combining the two approaches yields a fuller account of the archive than either approach alone (Blei et al., 2003; Freeman, 1978). Existing Epstein-focused public resources and research provide searchable documents, named entities, investigative context, and broader facilitation-network comparisons (Pokorny, 2026). Our contribution is to connect these perspectives in a reproducible analysis pipeline. We construct a cleaned analysis corpus, remove unknown and redacted actors from the main network summaries, filter to likely English-language emails for interpretable text analysis, and produce statistical outputs together with an interactive 3D network visualization. The output is an integrated descriptive account of what the archive is mostly about and who structures its communication, supported by reproducible corpus statistics, text-mining results, and network measures.
 
+<span id="section-data" class="anchor-target"></span>
 ## 2. Data and Corpus Construction
 
 The project uses three main analysis tables produced from the public Jmail email archive and local preprocessing outputs. Person metadata and aliases were consolidated from the Jmail people export, the Epstein Document Archive entities dataset, and the Kaggle persons-of-interest list (Epstein Document Archive, 2026; Jmail Data API, 2026; Wilomentena, 2026). The first table is `fact_emails.parquet`, with one row per email and cleaned text and metadata. The second is `bridge_email_people.parquet`, which links emails to participants. The third is `dim_people.parquet`, which stores canonical person identifiers and display names. The unit of analysis for text mining is the individual email. The unit of analysis for network analysis is the person-email participation link.
@@ -323,6 +331,7 @@ The full key corpus statistics and data dictionary are available as separate com
 
 The data pipeline was designed to be reproducible. Raw and intermediate data are stored separately from generated outputs, and the analysis scripts produce the cleaned corpus, summary CSVs, charts, and network files from the same local data tables. Validation checks included row-count comparisons after each filter, inspection of missing metadata, checks for implausible dates, manual review of theme examples, and robustness checks on network edge thresholds.
 
+<span id="section-methods" class="anchor-target"></span>
 ## 3. Methods
 
 Before describing the models, we define the main technical terms used in the report. A *corpus* is the full collection of documents analyzed by the project; here, each document is one email. A *token* is a word-like unit after preprocessing. A *metadata field* is information attached to an email, such as sender, recipient, cc, bcc, date, or subject. A *co-presence edge* is a network connection between two actors who appear in the same email metadata. This edge does not mean that the two actors met, collaborated, or had a verified personal relationship; it only means that the released email data places them in the same communication record.
@@ -347,6 +356,7 @@ The network model is an undirected weighted co-presence graph. It was chosen bec
 
 The interactive 3D visualization uses a readable subset of the filtered graph. Nodes are arranged into distance shells around Jeffrey Epstein. A one-step distance means direct co-presence with Epstein in at least one email; two steps means an actor is connected through one intermediary; and so on. This is a graph-theoretic distance, not proof of a real-world relationship.
 
+<span id="section-results" class="anchor-target"></span>
 ## 4. Results
 
 The results are organized around the research question: which communication functions dominate the corpus, and which actors structure the email network?
@@ -421,6 +431,7 @@ The edge-threshold robustness check strengthens the centralization interpretatio
 
 As an additional robustness check, we also tested a directed sender-recipient graph using the same final corpus and the same unknown/redacted actor filtering. This alternative graph contains 1,028 nodes and 4,815 repeated directed ties at the same minimum edge weight of 2. Its largest weak component contains 96.50% of nodes, and Epstein is both the top weighted sender and the top weighted recipient. This means the centralization result is not only an artifact of treating all email participants as undirected co-presences; it also appears when communication direction is preserved.
 
+<span id="section-discussion" class="anchor-target"></span>
 ## 5. Discussion
 
 The results answer the research question in two connected ways. Text mining reveals that the corpus is mostly about practical coordination: scheduling, travel, finance, media/reputation, and legal communication. Network analysis reveals that this coordination is structurally concentrated around Epstein and a small set of intermediaries. Together, this means the archive is best interpreted as a centralized coordination system: the text shows what work the communication performs, and the network shows who sits at the center of that work.
@@ -514,28 +525,19 @@ Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O.,
 
 Pokorny, L. (2026). *Social network analysis of Jeffrey Epstein and other elite offenders' facilitation networks through a psychopossession lens*. Zenodo. https://doi.org/10.5281/zenodo.18795644
 
+U.S. Department of Justice. (2025, February 27). *Attorney General Pamela Bondi releases first phase of declassified Epstein files*. https://www.justice.gov/opa/pr/attorney-general-pamela-bondi-releases-first-phase-declassified-epstein-files
+
+U.S. Department of Justice. (2026, January 9). *Department of Justice publishes 3.5 million responsive pages in compliance with the Epstein Files Transparency Act*. https://www.justice.gov/opa/pr/department-justice-publishes-35-million-responsive-pages-compliance-epstein-files
+
+Volscho, T. (2025). Elite sex trafficking as a crime of the powerful: A comparative case study of Jeffrey Epstein and Peter Nygard's alleged trafficking enterprises. *Deviant Behavior*. https://doi.org/10.1080/01639625.2025.2507337
+
 Wilomentena. (2026). *Epstein files - Persons of interest list* [Data set]. Kaggle. https://www.kaggle.com/datasets/wilomentena/epstein-list-persons-of-interest
 </article>
 
 <aside class="insight-rail" markdown="1">
 <div class="rail-panel">
-  <p class="rail-kicker">Core Result</p>
-  <div class="metric">
-    <strong>1,101,455</strong>
-    <span>likely-English emails in the final text-mining corpus</span>
-  </div>
-  <div class="metric">
-    <strong>1,224</strong>
-    <span>actors in the filtered co-presence network</span>
-  </div>
-  <div class="metric">
-    <strong>5,426</strong>
-    <span>repeated co-presence edges after filtering</span>
-  </div>
-</div>
-<div class="rail-panel">
   <p class="rail-kicker">Reading Guide</p>
-  <p class="rail-note">Use the report text for the argument, the embedded graph for exploration, and the companion files for reproducibility details that would be too long for the final paper.</p>
+  <p class="rail-note">Use the report text for the argument and the embedded graph for exploration.</p>
 </div>
 <div class="rail-panel">
   <p class="rail-kicker">Companion Files</p>
