@@ -140,7 +140,7 @@ title: Reading an Email Archive as Text and Network
     background: rgba(255, 252, 246, 0.72);
     box-shadow: 0 18px 52px rgba(24, 33, 43, 0.07);
     padding: 18px;
-    min-height: 178px;
+    min-height: 244px;
   }
   .rail-kicker {
     margin: 0 0 12px;
@@ -198,6 +198,10 @@ title: Reading an Email Archive as Text and Network
     line-height: 1.45;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: #34424d;
+  }
+  .site-rail > .rail-panel,
+  .insight-rail > .rail-panel {
+    min-height: 244px;
   }
   @media (max-width: 1100px) {
     .paper-shell {
@@ -269,6 +273,9 @@ title: Reading an Email Archive as Text and Network
   <p class="rail-kicker">Homepage</p>
   <p class="rail-title">Final project<br>paper</p>
   <p class="rail-note">Read the complete MS3 report on this page.</p>
+  <div class="rail-links">
+    <a href="./">Current page</a>
+  </div>
 </div>
 </aside>
 <article class="paper" markdown="1">
