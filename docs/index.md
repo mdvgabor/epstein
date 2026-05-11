@@ -517,37 +517,37 @@ Future work should improve the pipeline in five ways. First, language detection 
 
 ## References
 
-Baker, W. E., & Faulkner, R. R. (1993). The social organization of conspiracy: Illegal networks in the heavy electrical equipment industry. *American Sociological Review, 58*(6), 837-860. https://doi.org/10.2307/2095954
+Baker, W. E., & Faulkner, R. R. (1993). The social organization of conspiracy: Illegal networks in the heavy electrical equipment industry. *American Sociological Review, 58*(6), 837-860. [https://doi.org/10.2307/2095954](https://doi.org/10.2307/2095954)
 
-Blei, D. M., Ng, A. Y., & Jordan, M. I. (2003). Latent Dirichlet allocation. *Journal of Machine Learning Research, 3*, 993-1022. https://jmlr.org/papers/v3/blei03a.html
+Blei, D. M., Ng, A. Y., & Jordan, M. I. (2003). Latent Dirichlet allocation. *Journal of Machine Learning Research, 3*, 993-1022. [https://jmlr.org/papers/v3/blei03a.html](https://jmlr.org/papers/v3/blei03a.html)
 
-Diesner, J., Frantz, T. L., & Carley, K. M. (2005). Communication networks from the Enron email corpus: "It's always about the people. Enron is no different." *Computational and Mathematical Organization Theory, 11*(3), 201-228. https://doi.org/10.1007/s10588-005-5377-0
+Diesner, J., Frantz, T. L., & Carley, K. M. (2005). Communication networks from the Enron email corpus: "It's always about the people. Enron is no different." *Computational and Mathematical Organization Theory, 11*(3), 201-228. [https://doi.org/10.1007/s10588-005-5377-0](https://doi.org/10.1007/s10588-005-5377-0)
 
-Epstein Document Archive. (2026). *Download datasets: Entities and people* [Data set]. https://www.epsteininvestigation.org/download
+Epstein Document Archive. (2026). *Download datasets: Entities and people* [Data set]. [https://www.epsteininvestigation.org/download](https://www.epsteininvestigation.org/download)
 
-Freeman, L. C. (1978). Centrality in social networks: Conceptual clarification. *Social Networks, 1*(3), 215-239. https://doi.org/10.1016/0378-8733(78)90021-7
+Freeman, L. C. (1978). Centrality in social networks: Conceptual clarification. *Social Networks, 1*(3), 215-239. [https://doi.org/10.1016/0378-8733(78)90021-7](https://doi.org/10.1016/0378-8733%2878%2990021-7)
 
-Granovetter, M. S. (1973). The strength of weak ties. *American Journal of Sociology, 78*(6), 1360-1380. https://doi.org/10.1086/225469
+Granovetter, M. S. (1973). The strength of weak ties. *American Journal of Sociology, 78*(6), 1360-1380. [https://doi.org/10.1086/225469](https://doi.org/10.1086/225469)
 
-Hagberg, A. A., Schult, D. A., & Swart, P. J. (2008). Exploring network structure, dynamics, and function using NetworkX. In G. Varoquaux, T. Vaught, & J. Millman (Eds.), *Proceedings of the 7th Python in Science Conference* (pp. 11-15). https://doi.org/10.25080/TCWV9851
+Hagberg, A. A., Schult, D. A., & Swart, P. J. (2008). Exploring network structure, dynamics, and function using NetworkX. In G. Varoquaux, T. Vaught, & J. Millman (Eds.), *Proceedings of the 7th Python in Science Conference* (pp. 11-15). [https://doi.org/10.25080/TCWV9851](https://doi.org/10.25080/TCWV9851)
 
-Jmail Data API. (2026). *Public data API for the Jmail email archive* [Data set]. https://jmail.world/docs/introduction
+Jmail Data API. (2026). *Public data API for the Jmail email archive* [Data set]. [https://jmail.world/docs/introduction](https://jmail.world/docs/introduction)
 
-Klimt, B., & Yang, Y. (2004). Introducing the Enron Corpus. In *Proceedings of the First Conference on Email and Anti-Spam*. https://www.ceas.cc/papers-2004/168.pdf
+Klimt, B., & Yang, Y. (2004). Introducing the Enron Corpus. In *Proceedings of the First Conference on Email and Anti-Spam*. [https://www.ceas.cc/papers-2004/168.pdf](https://www.ceas.cc/papers-2004/168.pdf)
 
-Lee, D. D., & Seung, H. S. (1999). Learning the parts of objects by non-negative matrix factorization. *Nature, 401*, 788-791. https://doi.org/10.1038/44565
+Lee, D. D., & Seung, H. S. (1999). Learning the parts of objects by non-negative matrix factorization. *Nature, 401*, 788-791. [https://doi.org/10.1038/44565](https://doi.org/10.1038/44565)
 
-Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, E. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research, 12*(85), 2825-2830. https://jmlr.org/papers/v12/pedregosa11a.html
+Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, E. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research, 12*(85), 2825-2830. [https://jmlr.org/papers/v12/pedregosa11a.html](https://jmlr.org/papers/v12/pedregosa11a.html)
 
-Pokorny, L. (2026). *Social network analysis of Jeffrey Epstein and other elite offenders' facilitation networks through a psychopossession lens*. Zenodo. https://doi.org/10.5281/zenodo.18795644
+Pokorny, L. (2026). *Social network analysis of Jeffrey Epstein and other elite offenders' facilitation networks through a psychopossession lens*. Zenodo. [https://doi.org/10.5281/zenodo.18795644](https://doi.org/10.5281/zenodo.18795644)
 
-U.S. Department of Justice. (2025, February 27). *Attorney General Pamela Bondi releases first phase of declassified Epstein files*. https://www.justice.gov/opa/pr/attorney-general-pamela-bondi-releases-first-phase-declassified-epstein-files
+U.S. Department of Justice. (2025, February 27). *Attorney General Pamela Bondi releases first phase of declassified Epstein files*. [https://www.justice.gov/opa/pr/attorney-general-pamela-bondi-releases-first-phase-declassified-epstein-files](https://www.justice.gov/opa/pr/attorney-general-pamela-bondi-releases-first-phase-declassified-epstein-files)
 
-U.S. Department of Justice. (2026, January 9). *Department of Justice publishes 3.5 million responsive pages in compliance with the Epstein Files Transparency Act*. https://www.justice.gov/opa/pr/department-justice-publishes-35-million-responsive-pages-compliance-epstein-files
+U.S. Department of Justice. (2026, January 9). *Department of Justice publishes 3.5 million responsive pages in compliance with the Epstein Files Transparency Act*. [https://www.justice.gov/opa/pr/department-justice-publishes-35-million-responsive-pages-compliance-epstein-files](https://www.justice.gov/opa/pr/department-justice-publishes-35-million-responsive-pages-compliance-epstein-files)
 
-Volscho, T. (2025). Elite sex trafficking as a crime of the powerful: A comparative case study of Jeffrey Epstein and Peter Nygard's alleged trafficking enterprises. *Deviant Behavior*. https://doi.org/10.1080/01639625.2025.2507337
+Volscho, T. (2025). Elite sex trafficking as a crime of the powerful: A comparative case study of Jeffrey Epstein and Peter Nygard's alleged trafficking enterprises. *Deviant Behavior*. [https://doi.org/10.1080/01639625.2025.2507337](https://doi.org/10.1080/01639625.2025.2507337)
 
-Wilomentena. (2026). *Epstein files - Persons of interest list* [Data set]. Kaggle. https://www.kaggle.com/datasets/wilomentena/epstein-list-persons-of-interest
+Wilomentena. (2026). *Epstein files - Persons of interest list* [Data set]. Kaggle. [https://www.kaggle.com/api/v1/datasets/view/wilomentena/epstein-list-persons-of-interest](https://www.kaggle.com/api/v1/datasets/view/wilomentena/epstein-list-persons-of-interest)
 </article>
 
 <aside class="insight-rail" markdown="1">
