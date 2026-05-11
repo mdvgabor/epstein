@@ -140,6 +140,7 @@ title: Reading an Email Archive as Text and Network
     background: rgba(255, 252, 246, 0.72);
     box-shadow: 0 18px 52px rgba(24, 33, 43, 0.07);
     padding: 18px;
+    min-height: 178px;
   }
   .rail-kicker {
     margin: 0 0 12px;
@@ -265,24 +266,11 @@ title: Reading an Email Archive as Text and Network
 <div class="paper-shell">
 <aside class="site-rail" markdown="1">
 <div class="rail-panel">
-  <p class="rail-kicker">MS3 Final Paper</p>
-  <p class="rail-title">Text mining<br>meets network<br>structure.</p>
+  <p class="rail-kicker">Homepage</p>
+  <p class="rail-title">Final project<br>paper</p>
+  <p class="rail-note">Read the complete MS3 report on the homepage.</p>
   <div class="rail-links">
-    <a href="#section-abstract">Abstract</a>
-    <a href="#section-introduction">Introduction</a>
-    <a href="#section-data">Data and Corpus</a>
-    <a href="#section-methods">Methods</a>
-    <a href="#section-results">Results</a>
-    <a href="#section-discussion">Discussion</a>
-  </div>
-</div>
-<div class="rail-panel">
-  <p class="rail-kicker">Artifacts</p>
-  <div class="rail-links">
-    <a href="./network_3d.html">Open full 3D graph</a>
-    <a href="./ms3_key_corpus_statistics.html">Corpus statistics</a>
-    <a href="./ms3_data_dictionary.html">Data dictionary</a>
-    <a href="./ms3_network_settings.html">Network settings</a>
+    <a href="./">Open homepage</a>
   </div>
 </div>
 </aside>
@@ -294,7 +282,7 @@ title: Reading an Email Archive as Text and Network
 **Group:** Gepallatok  
 **Team members:** Bernath Mate, Kossuth Hugo, Medvegy Gabor, Salomon Bruno  
 **Date:** May 2026  
-**Project artifact:** [Homepage version](./) and [3D network graph](./network_3d.html)
+**Project artifact:** [3D network graph](./network_3d.html)
 
 <span id="section-abstract" class="anchor-target"></span>
 ## Abstract
@@ -536,15 +524,11 @@ Wilomentena. (2026). *Epstein files - Persons of interest list* [Data set]. Kagg
 
 <aside class="insight-rail" markdown="1">
 <div class="rail-panel">
-  <p class="rail-kicker">Reading Guide</p>
-  <p class="rail-note">Use the report text for the argument and the embedded graph for exploration.</p>
-</div>
-<div class="rail-panel">
-  <p class="rail-kicker">Companion Files</p>
+  <p class="rail-kicker">3D Graph</p>
+  <p class="rail-title">Interactive<br>network</p>
+  <p class="rail-note">Explore the co-presence network in a separate full-screen view.</p>
   <div class="rail-links">
-    <a href="./ms3_text_model_settings.html">Text model settings</a>
-    <a href="./ms3_nmf_topic_table.html">NMF topic table</a>
-    <a href="./">Homepage version</a>
+    <a href="./network_3d.html">Open 3D graph</a>
   </div>
 </div>
 </aside>
