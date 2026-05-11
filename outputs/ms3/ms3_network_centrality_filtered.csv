@@ -1,0 +1,101 @@
+person_id,person_name,degree,weighted_degree,betweenness
+jeffrey-epstein,Jeffrey Epstein,730,343926.0,0.9044174799796375
+lesley-groff,Lesley Groff,390,110003.0,0.24626568466994
+richard-kahn,Richard Kahn,242,74112.0,0.15402073104200764
+stewart-oldfield-,Stewart Oldfield,96,32757.0,0.09076604837243134
+brad-edwards-epllc,Brad Edwards,24,903.0,0.037766367980557124
+karyna-shuliak,Karyna Shuliak,153,25042.0,0.03475722858701582
+ghislaine-maxwell,Ghislaine Maxwell,56,3753.0,0.03014729950900164
+paul-morris-gmail,Paul Morris,84,28679.0,0.029241680305510095
+daphne-wallace-gmail,Daphne Wallace,114,22983.0,0.02777277686852155
+noam-chomsky,Noam Chomsky,33,6589.0,0.024519912711402074
+sigrid-mccawley,Sigrid McCawley,14,129.0,0.017561374795417348
+lawrence-krauss,Lawrence Krauss,58,4008.0,0.017534097108565194
+deepak-chopra,Deepak Chopra,32,3606.0,0.01512820512820513
+bella-klein-yale,Bella Klein,141,27129.0,0.014342607746863066
+larry-summers,Larry Summers,19,2084.0,0.014326241134751774
+larry-visosky,Larry Visoski,111,17953.0,0.012774140752864158
+laura-menninger,Laura Menninger,11,312.0,0.012763229678123296
+david-mitchell,David Mitchell,46,4344.0,0.012744135297326787
+ehud-barak,Ehud Barak,26,1731.0,0.011159301691216586
+bradley-gillin,Bradley Gillin,53,10068.0,0.009592198581560284
+peggy-siegal,Peggy Siegal,30,4612.0,0.009569012547735952
+merwin-dela-cruz-example,Merwin dela cruz,65,12078.0,0.008793632895248208
+darren-indyke,Darren Indyke,143,21175.0,0.00875886524822695
+sarah-kellen,Sarah Kellen,92,5986.0,0.007986906710310967
+jj-litchford,Jj Litchford,18,2566.0,0.007975995635570103
+doug-schoettle-caplinger,Doug Schoettle,36,2354.0,0.007838457706813219
+john-brockman,John Brockman,71,1806.0,0.0072065375522822345
+martin-zeman,Martin Zeman,29,8701.0,0.007164029823604292
+discovered-email-uppereastsidebusiness-apple-com,Martin O Brien,11,131.0,0.006398852695017215
+bobbi-c-sternheim,Bobbi C. Sternheim,7,159.0,0.0063802509547190404
+discovered-email-mlt91875-yahoo-com,Myla Trestiza,8,16.0,0.0063802509547190404
+assistant-to-jeffrey-epstein-recovered,Assistant to Jeffrey Epstein,130,1019.0,0.006333878887070377
+eileen-alexanderson-apollo-adv=sors,Eileen Alexanderson,31,7355.0,0.005589198036006547
+jennie-saunders-gmail,Jennie Saunders,14,1366.0,0.005589198036006547
+vahe-stepanian-db-2,Vahe Stepanian,58,26825.0,0.0050363702491362065
+brice-gordon,Brice Gordon,85,11842.0,0.004800507967091615
+discovered-email-julie-lawrencesummers-com,Julie Shample,3,7.0,0.004797771075434208
+larry,LARRY,63,3059.0,0.004789961811238407
+gregory-riches-nyc-2,Gregory Riches,18,965.0,0.004789961811238407
+dangene-and-jennie-enterprise,Dangene and Jennie Enterprise,9,632.0,0.004789961811238407
+discovered-email-allan-wilsonyachtmanagement-com,Allan Wilson,4,14.0,0.004789961811238407
+cynthia-rodriguez-example,Cynthia Rodriguez,47,5739.0,0.0047872340425531915
+jes-staley-jpmorgan,Jes Staley,31,2687.0,0.004756717700573105
+discovered-email-lvjet-aol-com,Gary Anzalone,41,631.0,0.0040040724947862216
+amanda-kirby,Amanda Kirby,44,8456.0,0.004001335603128814
+john-p-woods-aia-vpowernet,"John P. Woods, AIA",14,681.0,0.004001335603128814
+boris-nikolic,Boris Nikolic,51,12858.0,0.003990725586470268
+xavier-avila,Xavier Avila,28,6722.0,0.003990725586470268
+richard-barnett-,Richard Barnett,69,6502.0,0.003990725586470268
+roy-black,Roy Black,11,190.0,0.003990725586470268
+joi-ito,Joi Ito,56,5434.0,0.003986633933442444
+petermandelson,Peter Mandelson,30,2807.0,0.003982542280414621
+brad-wechsler-wechsler,Brad Wechsler,46,8126.0,0.0032024004364429896
+jermaine-ruan-ruan-2,Jermaine Ruan,64,6874.0,0.0024058919803600655
+martin-weinberg,Martin Weinberg,24,1555.0,0.0024058919803600655
+michael-link,Michael Link,38,766.0,0.0024058919803600655
+discovered-email-karynashuliak-icloud-com,"Merwin, Karyna Shuliak",24,333.0,0.0024058919803600655
+ann-rodriguez,Ann Rodriguez,90,29329.0,0.0024057277668606213
+cecile-de-jongh--2,Cecile de Jongh,75,8599.0,0.0016039279869067104
+janusz-banasiak-pyscmail,Janusz Banasiak,55,4641.0,0.0016039279869067104
+stephen-hanson--3,Steve Hanson,36,4266.0,0.0016039279869067104
+vijay-a-sawant-db,Vijay-A Sawant,8,3220.0,0.0016039279869067104
+thomas-turrin,Thomas Turrin,24,2515.0,0.0016039279869067104
+steven-sinofsky-psylo,Steven Sinofsky,32,1334.0,0.0016039279869067104
+google-calendar-recovered,Google Calendar,11,4810.0,0.001603818511240414
+barry-j-cohen-elysllc,Barry J. Cohen,22,2761.0,0.0016012002182214948
+ny-fbi-recovered,(NY) (FBI),11,88.0,0.0008539101971109372
+michael-glidden-homedepot,Michael Glidden,52,5992.0,0.0008033278777959629
+rich-kahn,Rich Kahn,161,24206.0,0.0008019639934533552
+jojo-fontanilla,Jojo Fontanilla,68,14896.0,0.0008019639934533552
+gary-kerney-verizon,Gary Kerney,43,9480.0,0.0008019639934533552
+eric-roth-intljet,Eric Roth,30,5643.0,0.0008019639934533552
+ada-clapp,Ada Clapp,29,4954.0,0.0008019639934533552
+bebe-avdiu,Bebe Avdiu,67,3201.0,0.0008019639934533552
+a-de-rothschild,A. de Rothschild,16,2596.0,0.0008019639934533552
+chip-packard-nameonly,'Chip Packard',29,2173.0,0.0008019639934533552
+jean-luc-brunel,Jean-Luc Brunel,21,2131.0,0.0008019639934533552
+mark-tollison-hotmail,Mark Tollison,38,2112.0,0.0008019639934533552
+al-seckel,Al Seckel,18,1963.0,0.0008019639934533552
+carlos-rodriguez-reply,Carlos Rodriguez,40,1853.0,0.0008019639934533552
+peter-attia,Peter Attia,9,1662.0,0.0008019639934533552
+carluz-toylo,Carluz Toylo,34,1657.0,0.0008019639934533552
+aracely-sanchez-uk,Aracely Sanchez,30,1632.0,0.0008019639934533552
+natalia-molotkova--3,Natalia Molotkova,19,1592.0,0.0008019639934533552
+ariane-de-rothschild,Ariane de Rothschild,37,1501.0,0.0008019639934533552
+discovered-email-richardkahn12-gmail-com,Andrew S. Atlas,52,798.0,0.0008019639934533552
+ramon-alonso-,Ramon Alonso,11,751.0,0.0008019639934533552
+jonathan-farkas-example,Jonathan Farkas,6,500.0,0.0008019639934533552
+discovered-email-johndoe-example-com,John Doe,4,423.0,0.0008019639934533552
+woody-allen,Woody Allen,12,413.0,0.0008019639934533552
+anna,Anna,27,232.0,0.0008019639934533552
+jay-lefkowitz,Jay Lefkowitz,12,195.0,0.0008019639934533552
+discovered-email-ceverdell-cohengresser-com,Christian Everdell,5,90.0,0.0008019639934533552
+chris-dilorio-recovered,Chris Dilorio,18,52.0,0.0008019639934533552
+discovered-email-bbarket-barketepstein-com,Bruce Barket,4,9.0,0.0008019639934533552
+discovered-email-wmerrell-chpnet-org,Woodson Merrell,2,5.0,0.0008019639934533552
+andrew-lourie,Andrew Lourie,2,4.0,0.0008019639934533552
+joshua-shoshan,Joshua Shoshan,34,5543.0,0.000801909255620207
+terje-rod-larsen-example,Terje Rod-Larsen,67,1923.0,0.000801909255620207
+zorro-ranch-nameonly-4,Zorro Ranch,28,1497.0,0.000801909255620207

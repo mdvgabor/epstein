@@ -1,0 +1,21 @@
+section,metric,value,interpretation
+corpus_construction,raw_email_rows,1758382,All available rows before final analysis filtering.
+corpus_construction,rows_with_10_plus_tokens,1197760,Removes empty or extremely short rows that are weak text-mining units.
+corpus_construction,rows_after_redacted_sender_filter,1103480,Removes rows where sender metadata is visibly redacted.
+corpus_construction,likely_english_rows_for_analysis,1101455,Main corpus used for final text-mining outputs.
+corpus_construction,sampled_rows_used_for_ms3_tables,1101455,Full filtered corpus was used; no sampling in final MS3 outputs.
+corpus_construction,valid_year_min,1990,Earliest valid year retained in the final corpus.
+corpus_construction,valid_year_max,2019,Latest valid year retained in the final corpus.
+corpus_construction,median_tokens_in_analysis_rows,28,Median document length after final filtering.
+model_and_network_scale,tfidf_features,395222,Number of unigram and bigram features after filtering.
+model_and_network_scale,count_features,395222,Same vocabulary size used for interpretable term frequencies.
+model_and_network_scale,nmf_topics,8,Number of topic-like components used for interpretation.
+model_and_network_scale,median_pairwise_cosine_first_1000,0.0000,Most emails are textually distinct after TF-IDF weighting.
+model_and_network_scale,p95_pairwise_cosine_first_1000,0.0241,Even relatively similar emails remain weakly similar in the TF-IDF space.
+model_and_network_scale,network_nodes_filtered,1224,Actors retained in the main co-presence network after removing unknown/redacted labels.
+model_and_network_scale,network_edges_filtered,5426,Repeated co-presence ties retained at the main edge threshold.
+communication_functions,operational_coordination,206843,18.78% of final analysis corpus.
+communication_functions,movement_and_itinerary_management,114917,10.43% of final analysis corpus.
+communication_functions,financial_administration,93179,8.46% of final analysis corpus.
+communication_functions,public_narrative_management,40916,3.71% of final analysis corpus.
+communication_functions,legal_and_investigative_communication,36473,3.31% of final analysis corpus.

@@ -1,0 +1,16 @@
+person_id,person_name,degree,weighted_degree,betweenness,report_role,interpretation
+jeffrey-epstein,Jeffrey Epstein,730,343926.0,0.9044174799796375,central ego / dominant broker,"Largest degree, weighted degree, and betweenness; communication is structurally centered on him."
+lesley-groff,Lesley Groff,390,110003.0,0.24626568466994,administrative intermediary,High brokerage and repeated co-presence suggest a major coordination role.
+richard-kahn,Richard Kahn,242,74112.0,0.15402073104200764,financial/administrative intermediary,High degree and betweenness place him near the center of repeated administrative exchanges.
+stewart-oldfield-,Stewart Oldfield,96,32757.0,0.09076604837243134,operational intermediary,"Strong broker score relative to degree, connecting parts of the co-presence graph."
+brad-edwards-epllc,Brad Edwards,24,903.0,0.037766367980557124,legal cluster connector,"Lower degree than administrative actors but high betweenness, consistent with a bridge into legal material."
+karyna-shuliak,Karyna Shuliak,153,25042.0,0.03475722858701582,frequent direct-contact actor,High weighted degree and brokerage indicate repeated participation in central communication.
+ghislaine-maxwell,Ghislaine Maxwell,56,3753.0,0.03014729950900164,social/legal cluster connector,"Moderate degree with high betweenness, indicating bridge-like position in the filtered graph."
+paul-morris-gmail,Paul Morris,84,28679.0,0.029241680305510095,operational/administrative connector,High weighted degree and betweenness suggest repeated co-presence across central exchanges.
+daphne-wallace-gmail,Daphne Wallace,114,22983.0,0.02777277686852155,administrative connector,High degree and weighted degree indicate repeated participation in core operational communication.
+noam-chomsky,Noam Chomsky,33,6589.0,0.024519912711402074,intellectual/social contact cluster,"Not among the highest weighted-degree actors, but betweenness suggests a bridge to a distinct communication cluster."
+sigrid-mccawley,Sigrid McCawley,14,129.0,0.017561374795417348,secondary actor,Appears in the top centrality table and should be interpreted from its network position.
+lawrence-krauss,Lawrence Krauss,58,4008.0,0.017534097108565194,secondary actor,Appears in the top centrality table and should be interpreted from its network position.
+deepak-chopra,Deepak Chopra,32,3606.0,0.01512820512820513,secondary actor,Appears in the top centrality table and should be interpreted from its network position.
+bella-klein-yale,Bella Klein,141,27129.0,0.014342607746863066,secondary actor,Appears in the top centrality table and should be interpreted from its network position.
+larry-summers,Larry Summers,19,2084.0,0.014326241134751774,secondary actor,Appears in the top centrality table and should be interpreted from its network position.

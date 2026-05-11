@@ -1,0 +1,27 @@
+table,field,data_type,description
+fact_emails,email_id,String,Stable email identifier used for joins.
+fact_emails,doc_id,String,Source document identifier from the corpus release. Example: EFTA02255570.
+fact_emails,message_index,Int64,Message position within the source document.
+fact_emails,subject,String,Cleaned email subject line; nullable.
+fact_emails,subject_base,String,Subject after removing reply and forward prefixes; nullable.
+fact_emails,sent_at,Datetime,Parsed timestamp where available.
+fact_emails,year,Int32,"Year derived from sent_at; set to null outside the valid 1990-2019 range."
+fact_emails,folder_path,String,"Folder metadata such as inbox or sent folder; mostly missing and not used for final analysis."
+fact_emails,release_batch,Int64,Source release batch identifier.
+fact_emails,body_clean,String,"Cleaned email body after HTML, footer, quote, encoding, and artifact removal."
+fact_emails,text_clean,String,Primary analysis text: cleaned subject plus cleaned body.
+fact_emails,text_char_len,UInt32,Character length of text_clean.
+fact_emails,text_token_len,UInt32,Regex token count for text_clean.
+fact_emails,sender_redacted,Boolean,True when the raw sender field appears visibly redacted.
+bridge_email_people,email_id,String,Join key to fact_emails.
+bridge_email_people,person_id,String,Canonical or discovered person identifier.
+bridge_email_people,person_name,String,"Display name from known, inferred, or discovered person mapping."
+bridge_email_people,involvement_role,String,"Participant role in the email metadata: sender, to, cc, bcc, or account_email."
+bridge_email_people,role_index,Int64,Position within the original role list.
+bridge_email_people,match_source,String,"Source of person resolution, such as known email, display-name match, inferred email, or discovered email."
+bridge_email_people,display_name,String,Display name extracted from the original address field.
+bridge_email_people,raw_value,String,Original raw address value before person resolution.
+dim_people,person_id,String,Canonical person identifier.
+dim_people,person_name,String,Canonical display name.
+dim_people,description,String,Description from source metadata or discovered-person note.
+ms3_clean_corpus,is_likely_english,Boolean,Heuristic inclusion decision used to remove non-English or too-short rows from the final text-mining corpus.

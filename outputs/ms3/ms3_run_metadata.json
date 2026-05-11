@@ -1,0 +1,14 @@
+{
+  "sample_rows_env": 0,
+  "sample_seed": 7,
+  "analysis_rows_after_filters": 1101455,
+  "sampled_rows": 1101455,
+  "network_unknown_redacted_removed": true,
+  "language_filter": "heuristic English filter; excludes very short texts and obvious non-English rows",
+  "text_models": [
+    "CountVectorizer",
+    "TfidfVectorizer",
+    "NMF",
+    "cosine similarity robustness sample"
+  ]
+}

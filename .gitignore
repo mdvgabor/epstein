@@ -20,6 +20,7 @@ data/*
 !data/jmail_person_emails.csv
 !data/people.csv
 !data/person_email_seed.csv
+!data/ms3_clean_corpus.parquet
 
 # Models
 models
@@ -27,6 +28,10 @@ models
 # Outputs (generated)
 outputs/
 outputs_colab_full/
+!outputs/
+outputs/*
+!outputs/ms3/
+!outputs/ms3/**
 
 # Tools / IDE / OS
 .ruff_cache

@@ -1,0 +1,9 @@
+metric,value
+sample_rows,1101455.0
+tfidf_features,395222.0
+count_features,395222.0
+nmf_topics,8.0
+median_pairwise_cosine_first_1000,0.0
+p95_pairwise_cosine_first_1000,0.0241
+network_nodes_filtered,1224.0
+network_edges_filtered,5426.0

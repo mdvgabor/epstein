@@ -1,0 +1,6 @@
+metric,value,interpretation
+directed_nodes,1028,Actors retained in the directed sender-recipient check.
+directed_edges,4815,Repeated sender-recipient ties with weight >= 2.
+largest_weak_component_pct,96.5,Share of directed nodes connected if edge direction is ignored.
+top_weighted_sender,Jeffrey Epstein,Actor with the largest repeated outgoing sender-recipient weight.
+top_weighted_recipient,Jeffrey Epstein,Actor with the largest repeated incoming sender-recipient weight.

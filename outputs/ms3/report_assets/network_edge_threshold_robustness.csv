@@ -1,0 +1,7 @@
+edge_weight_threshold,nodes,edges,largest_component_pct,top_weighted_degree_actor,interpretation
+2,1224,5426,95.75,Jeffrey Epstein,Centralized structure remains if Epstein stays the top weighted-degree actor and the largest component remains substantial.
+5,610,3005,97.21,Jeffrey Epstein,Centralized structure remains if Epstein stays the top weighted-degree actor and the largest component remains substantial.
+10,434,2116,97.24,Jeffrey Epstein,Centralized structure remains if Epstein stays the top weighted-degree actor and the largest component remains substantial.
+25,326,1352,97.24,Jeffrey Epstein,Centralized structure remains if Epstein stays the top weighted-degree actor and the largest component remains substantial.
+50,271,969,98.15,Jeffrey Epstein,Centralized structure remains if Epstein stays the top weighted-degree actor and the largest component remains substantial.
+100,235,710,98.3,Jeffrey Epstein,Centralized structure remains if Epstein stays the top weighted-degree actor and the largest component remains substantial.

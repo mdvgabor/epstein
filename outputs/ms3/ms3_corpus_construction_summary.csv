@@ -1,0 +1,9 @@
+metric,value
+raw_email_rows,1758382.0
+rows_with_10_plus_tokens,1197760.0
+rows_after_redacted_sender_filter,1103480.0
+likely_english_rows_for_analysis,1101455.0
+sampled_rows_used_for_ms3_tables,1101455.0
+valid_year_min,1990.0
+valid_year_max,2019.0
+median_tokens_in_analysis_rows,28.0
