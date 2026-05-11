@@ -140,7 +140,7 @@ title: Reading an Email Archive as Text and Network
     background: rgba(255, 252, 246, 0.72);
     box-shadow: 0 18px 52px rgba(24, 33, 43, 0.07);
     padding: 18px;
-    min-height: 244px;
+    height: 244px;
   }
   .rail-kicker {
     margin: 0 0 12px;
@@ -172,6 +172,15 @@ title: Reading an Email Archive as Text and Network
     line-height: 1.25;
     text-decoration: none;
   }
+  .rail-panel.compact .rail-links {
+    gap: 4px;
+    margin-top: 10px;
+  }
+  .rail-panel.compact .rail-links a {
+    padding: 4px 0 4px 10px;
+    font-size: 12.5px;
+    line-height: 1.15;
+  }
   .metric {
     border-left: 4px solid #d79b35;
     padding-left: 12px;
@@ -201,7 +210,7 @@ title: Reading an Email Archive as Text and Network
   }
   .site-rail > .rail-panel,
   .insight-rail > .rail-panel {
-    min-height: 244px;
+    height: 244px;
   }
   @media (max-width: 1100px) {
     .paper-shell {
@@ -218,6 +227,8 @@ title: Reading an Email Archive as Text and Network
       padding-top: 0;
     }
     .rail-panel {
+      height: auto;
+      min-height: 0;
       margin-bottom: 14px;
     }
     .paper {
@@ -275,6 +286,17 @@ title: Reading an Email Archive as Text and Network
   <p class="rail-note">Read the complete MS3 report on the homepage.</p>
   <div class="rail-links">
     <a href="./">Open homepage</a>
+  </div>
+</div>
+<div class="rail-panel compact">
+  <p class="rail-kicker">Sections</p>
+  <div class="rail-links">
+    <a href="#section-abstract">Abstract</a>
+    <a href="#section-introduction">Introduction</a>
+    <a href="#section-data">Data and Corpus</a>
+    <a href="#section-methods">Methods</a>
+    <a href="#section-results">Results</a>
+    <a href="#section-discussion">Discussion</a>
   </div>
 </div>
 </aside>
@@ -533,6 +555,16 @@ Wilomentena. (2026). *Epstein files - Persons of interest list* [Data set]. Kagg
   <p class="rail-note">Explore the co-presence network in a separate full-screen view.</p>
   <div class="rail-links">
     <a href="./network_3d.html">Open 3D graph</a>
+  </div>
+</div>
+<div class="rail-panel compact">
+  <p class="rail-kicker">Supplementary Tables</p>
+  <div class="rail-links">
+    <a href="./ms3_key_corpus_statistics.html">Corpus statistics</a>
+    <a href="./ms3_data_dictionary.html">Data dictionary</a>
+    <a href="./ms3_text_model_settings.html">Text model settings</a>
+    <a href="./ms3_network_settings.html">Network settings</a>
+    <a href="./ms3_nmf_topic_table.html">NMF topic table</a>
   </div>
 </div>
 </aside>
