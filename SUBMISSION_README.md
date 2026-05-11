@@ -25,7 +25,7 @@ This branch contains the files needed for the preliminary MS3 submission and for
 - `data/bridge_email_people.parquet` - email-person bridge table.
 - `data/dim_people.parquet` - canonical person table.
 - `data/ms3_clean_corpus.parquet` - cleaned MS3 analysis corpus.
-- `outputs/ms3/` - generated CSV outputs, figures, metadata, validation artifacts, and interactive network output.
+- `outputs/ms3/` - generated CSV outputs, figures, metadata, report assets, and interactive network output.
 
 ## Reproduction Notes
 
@@ -40,3 +40,7 @@ uv run python scripts/build_3d_network.py
 ```
 
 The generated report outputs are written under `outputs/ms3/`, while the website-ready copies are under `docs/`.
+
+## Files Intentionally Excluded
+
+This branch excludes exploratory notebooks, old preprocessing helpers, local project notes, OS metadata, draft documents, and duplicate ZIP exports. The remaining files are the final report/site files, required data inputs, MS3 scripts, generated outputs, and dependency metadata.
