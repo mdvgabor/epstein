@@ -78,6 +78,7 @@ title: Reading an Email Archive as Text and Network
     font-family: Georgia, "Times New Roman", serif;
     font-size: 18px;
     line-height: 1.68;
+    text-align: justify;
   }
   a {
     color: #126782;
@@ -207,6 +208,7 @@ title: Reading an Email Archive as Text and Network
     line-height: 1.45;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: #34424d;
+    text-align: left;
   }
   .site-rail > .rail-panel,
   .insight-rail > .rail-panel {
