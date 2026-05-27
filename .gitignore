@@ -32,6 +32,8 @@ outputs_colab_full/
 outputs/*
 !outputs/ms3/
 !outputs/ms3/**
+!outputs/buss425/
+!outputs/buss425/**
 
 # Tools / IDE / OS
 .ruff_cache

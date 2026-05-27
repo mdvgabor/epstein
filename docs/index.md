@@ -1,5 +1,5 @@
 ---
-title: Reading an Email Archive as Text and Network
+title: Email Co-presence Network Centrality
 ---
 
 <style>
@@ -284,8 +284,8 @@ title: Reading an Email Archive as Text and Network
 <aside class="site-rail" markdown="1">
 <div class="rail-panel">
   <p class="rail-kicker">Homepage</p>
-  <p class="rail-title">Final project<br>paper</p>
-  <p class="rail-note">Read the complete MS3 report on this page.</p>
+  <p class="rail-title">BUSS425<br>network study</p>
+  <p class="rail-note">Read the centrality-focused assignment version on this page.</p>
   <div class="rail-links">
     <a href="./">Current page</a>
   </div>
@@ -299,14 +299,17 @@ title: Reading an Email Archive as Text and Network
     <a href="#section-methods">Methods</a>
     <a href="#section-results">Results</a>
     <a href="#section-discussion">Discussion</a>
+    <a href="./buss425_full_analysis.html">Full analysis</a>
+    <a href="./buss425_top15_adjacency_matrix.html">Adjacency matrix</a>
+    <a href="./buss425_video_slide_outline.html">Slide script</a>
   </div>
 </div>
 </aside>
 <article class="paper" markdown="1">
 
-# Reading an Email<br>Archive as Text<br>and Network
+# Email Co-presence<br>Network Centrality
 
-**Course:** Text Mining and Analysis  
+**Course:** BUSS425  
 **Group:** Gepallatok  
 **Team members:** Bernath Mate, Kossuth Hugo, Medvegy Gabor, Salomon Bruno  
 **Date:** May 2026  
@@ -315,7 +318,7 @@ title: Reading an Email Archive as Text and Network
 <span id="section-abstract" class="anchor-target"></span>
 ## Abstract
 
-This project analyzes the Epstein email corpus as both a textual archive and a communication network, following earlier work that treats released email collections as analyzable organizational records (Diesner et al., 2005; Klimt & Yang, 2004). The final analysis corpus contains 1,101,455 likely-English emails after filtering very short rows, visibly redacted senders, and likely non-English material. We combine interpretable text-mining methods, including term frequencies, TF-IDF, keyword-defined communication functions, and non-negative matrix factorization, with an email co-presence network built from sender, recipient, cc, and bcc metadata (Blei et al., 2003; Freeman, 1978; Lee & Seung, 1999). The main result is that the archive is dominated by operational coordination rather than a single scandal-specific vocabulary: meetings and scheduling appear in 18.78% of analyzed emails, travel and logistics in 10.43%, and finance/assets in 8.46%. The filtered co-presence network contains 1,224 nodes and 5,426 edges and is highly centralized around Jeffrey Epstein and a small set of intermediaries. These findings suggest that the released email archive is best understood as a communication infrastructure archive: it records routine coordination, and that coordination is structurally concentrated around a small number of actors.
+This BUSS425 assignment analyzes an informal communication network built from the released Epstein email archive. The central research question is: **which actors are structurally central in the email co-presence network, and what does centrality reveal beyond the expected dominance of Jeffrey Epstein?** The network contains 1,224 visible actors and 5,426 weighted edges after filtering unknown and redacted actors. An edge means only that two actors appeared in the same email metadata field, such as sender, recipient, cc, or bcc; it does not prove direct communication, closeness, collaboration, intent, or wrongdoing. The analysis uses degree, weighted degree, and betweenness centrality to identify the central ego and the intermediaries who structure different parts of the archive. Epstein is the dominant central node, which is expected given the archive boundary. The more informative finding is that Lesley Groff, Richard Kahn, Stewart Oldfield, Brad Edwards, Karyna Shuliak, Ghislaine Maxwell, Paul Morris, and Daphne Wallace appear as important intermediaries in the filtered co-presence graph. Text-mining results are used only as supporting context for communication functions; the assignment contribution is the network-centrality interpretation.
 
 <span id="section-introduction" class="anchor-target"></span>
 ## 1. Introduction
@@ -326,13 +329,13 @@ The recent public release and indexing of Epstein-related documents has created 
 
 The Enron corpus, for example, became important because it showed that released email collections can be studied as both text and organizational communication data (Klimt & Yang, 2004). Email archives show not only what topics recur, but also how communication is organized: who appears repeatedly, who connects otherwise separate groups, and which practical functions dominate the flow of information. Network analysis and text mining can help uncover complex structures, identify influential actors, and describe recurring themes in large communication datasets. Previous work on email archives demonstrates that communication metadata can expose organizational structure, especially when messages are transformed into communication networks (Diesner et al., 2005). In the Epstein email corpus, these methods can support public understanding by transforming a large and fragmented dataset into interpretable textual and relational patterns.
 
-The goal of this project is not to infer guilt, assign responsibility, or prove real-world relationships from email metadata alone. Instead, the project asks what communicative functions appear in the released email corpus and how those communications are structurally organized. This distinction is important because an email co-presence edge means that two actors appeared in the same email metadata, not that they necessarily had a close social relationship or shared intent. The project therefore treats the corpus as evidence about the released archive itself: what kinds of coordination it records, which actors are structurally central within it, and how text-mining and network-science methods can be combined to describe these patterns cautiously.
+The goal of this project is not to infer guilt, assign responsibility, or prove real-world relationships from email metadata alone. Instead, the project asks how communication records are structurally organized inside the released archive. This distinction must be repeated throughout the analysis because an email co-presence edge means that two actors appeared in the same email metadata, not that they necessarily communicated directly, had a close relationship, collaborated, or shared intent. The project therefore treats the corpus as evidence about the released archive itself: which actors are structurally central within it, which intermediaries appear beyond the expected central actor, and how cautiously defined centrality measures can help answer the question.
 
 Our research question is:
 
-<p class="note"><strong>How can text mining and network analysis reveal the main communicative functions of the Epstein email corpus and the key actors who structured the communication network?</strong></p>
+<p class="note"><strong>Which actors are structurally central in the Epstein email co-presence network, and what does centrality reveal beyond the expected dominance of Jeffrey Epstein?</strong></p>
 
-This project adds to the existing literature by applying a combined text-mining and network-science framework to the Epstein email corpus specifically. Word-level analysis can show that certain themes recur, but it cannot show which actors connect those themes across the network. Centrality analysis can identify structurally important actors, but it cannot explain what kinds of communication make them central. Combining the two approaches yields a fuller account of the archive than either approach alone (Blei et al., 2003; Freeman, 1978). Existing Epstein-focused public resources and research provide searchable documents, named entities, investigative context, and broader facilitation-network comparisons (Pokorny, 2026). Our contribution is to connect these perspectives in a reproducible analysis pipeline. We construct a cleaned analysis corpus, remove unknown and redacted actors from the main network summaries, filter to likely English-language emails for interpretable text analysis, and produce statistical outputs together with an interactive 3D network visualization. The output is an integrated descriptive account of what the archive is mostly about and who structures its communication, supported by reproducible corpus statistics, text-mining results, and network measures.
+This project adds to the existing literature by applying a centrality-focused network-science framework to the Epstein email corpus specifically. Since the archive is defined around Epstein, finding him at the center is partly expected and should not be overclaimed. The stronger contribution is to identify the second layer of structurally important actors: those with high weighted co-presence, those with high betweenness, and those whose network positions suggest brokerage between otherwise less connected parts of the archive. Text mining remains useful for context because it shows that the archive is dominated by scheduling, travel, finance, media, and legal communication functions. However, for this assignment, those text results support the network interpretation rather than replace it. The main output is a weighted adjacency matrix, centrality table, and visualization that answer the BUSS425 network-analysis question.
 
 <span id="section-data" class="anchor-target"></span>
 ## 2. Data and Corpus Construction
@@ -364,18 +367,18 @@ The main text model used for topic discovery is non-negative matrix factorizatio
 
 ### 3.2 Network Analysis
 
-The network pipeline builds an undirected co-presence graph using NetworkX (Hagberg et al., 2008). Two actors are connected when they appear in the same email metadata as sender, recipient, cc, or bcc participants. Edge weights count repeated co-presence. Crowded emails with more than 25 actors are skipped to reduce the effect of bulk messages and distribution lists. The main network is filtered to remove unknown and redacted actors.
+The network pipeline builds an undirected co-presence graph using NetworkX (Hagberg et al., 2008). Two actors are connected when they appear in the same email metadata as sender, recipient, cc, or bcc participants. Edge weights count repeated co-presence, which satisfies the assignment requirement to account for relationship strength rather than only relationship presence. Crowded emails with more than 25 actors are skipped to reduce the effect of bulk messages and distribution lists. The main network is filtered to remove unknown and redacted actors. Every centrality result should be read under the same caution: co-presence is a metadata association, not proof of direct communication or a verified social tie.
 
 We report degree, weighted degree, and betweenness centrality. A *node* is an actor in the network, and an *edge* is a connection between two actors. Degree measures how many distinct actors a node is connected to. Weighted degree captures repeated communication co-presence by adding the strengths of a node's edges, so repeated appearances with the same actors count more than one-off appearances. Betweenness centrality measures how often a node lies on the shortest paths between other nodes; in practical terms, it identifies actors who may connect otherwise separate parts of the graph and are therefore useful for identifying brokers (Freeman, 1978). A *broker* is an actor whose position allows them to bridge different clusters or communication groups. A *connected component* is a set of nodes that can all be reached from one another through network paths. We also produce a robustness check by increasing the minimum repeated co-presence threshold from 2 to 100.
 
 The network model is an undirected weighted co-presence graph. It was chosen because the goal is not to predict relationships, but to describe how actors are structurally connected inside the email metadata. The full network settings and justifications are written out separately in the [network settings](./ms3_network_settings.html) companion file so the main report can stay concise.
 
-The interactive 3D visualization uses a readable subset of the filtered graph. Nodes are arranged into distance shells around Jeffrey Epstein. A one-step distance means direct co-presence with Epstein in at least one email; two steps means an actor is connected through one intermediary; and so on. This is a graph-theoretic distance, not proof of a real-world relationship.
+The interactive 3D visualization uses a readable subset of the filtered graph. Nodes are arranged into distance shells around Jeffrey Epstein. A one-step distance means co-presence with Epstein in at least one retained email metadata record; two steps means an actor is connected through one intermediary in the graph. This is graph-theoretic distance only, not proof of real-world relationship distance, collaboration, closeness, or intent.
 
 <span id="section-results" class="anchor-target"></span>
 ## 4. Results
 
-The results are organized around the research question: which communication functions dominate the corpus, and which actors structure the email network?
+The results are organized around the assignment question: which actors are central, which centrality measure supports that claim, and what the network reveals beyond the expected centrality of the archive's focal actor.
 
 ### 4.1 Communication Functions
 
@@ -407,32 +410,36 @@ The broad third topic is the clearest limitation of the topic model. It covers 7
 
 ![Top TF-IDF terms](./assets/ms3_top_tfidf_terms.png)
 
-### 4.3 Network Centralization
+### 4.3 Network Centrality: Expected Center, Informative Intermediaries
 
-The filtered co-presence network contains 1,224 nodes and 5,426 edges after excluding unknown and redacted actors from the main reported graph. Jeffrey Epstein is the dominant actor by degree, weighted degree, and betweenness centrality. This means he is not only connected to many actors, but also repeatedly appears in shared communication records and sits on many shortest paths through the network. Lesley Groff and Richard Kahn are the next strongest brokers, followed by actors such as Stewart Oldfield, Brad Edwards, Karyna Shuliak, Ghislaine Maxwell, Paul Morris, and Daphne Wallace. This means the archive is not diffuse: communication is highly centralized around Epstein and a small set of intermediaries who connect operational, financial, legal, and social parts of the corpus.
+The filtered co-presence network contains 1,224 nodes and 5,426 edges after excluding unknown and redacted actors from the main reported graph. Jeffrey Epstein is the dominant actor by degree, weighted degree, and betweenness centrality. This result is important but partly expected because the archive itself is organized around him. It should therefore be treated as a baseline finding, not the whole conclusion.
+
+The more useful centrality result is the structure beyond Epstein. Lesley Groff and Richard Kahn are the next strongest brokers, followed by actors such as Stewart Oldfield, Brad Edwards, Karyna Shuliak, Ghislaine Maxwell, Paul Morris, and Daphne Wallace. These actors do not all have the same kind of centrality. Some have very high weighted degree, meaning repeated co-presence in retained email metadata; others have relatively high betweenness, meaning they sit on many shortest paths between other actors in the graph. Because edges are co-presence edges, this should not be interpreted as proof that these actors coordinated, collaborated, or shared intent. It means they occupy structurally important positions within the released email metadata.
+
+This distinction makes the assignment answer stronger: Epstein's top rank confirms that the graph reflects the archive boundary, while the second layer of intermediaries shows how the communication archive is structured around administrative, financial, operational, legal, and social clusters.
 
 ![Top broker nodes](./assets/ms3_network_top_brokers_filtered.png)
 
 | Actor | Degree | Weighted degree | Betweenness | Interpretation |
 |---|---:|---:|---:|---|
-| Jeffrey Epstein | 730 | 343,926 | 0.904 | Dominant central ego and broker; communication is structurally centered on him. |
-| Lesley Groff | 390 | 110,003 | 0.246 | Administrative intermediary with repeated co-presence and high brokerage. |
-| Richard Kahn | 242 | 74,112 | 0.154 | Financial/administrative intermediary near the center of repeated exchanges. |
+| Jeffrey Epstein | 730 | 343,926 | 0.904 | Expected central ego in this archive-bounded graph; not a standalone substantive surprise. |
+| Lesley Groff | 390 | 110,003 | 0.246 | Administrative intermediary with repeated co-presence and high brokerage in metadata. |
+| Richard Kahn | 242 | 74,112 | 0.154 | Financial/administrative intermediary near the center of repeated metadata co-presence. |
 | Stewart Oldfield | 96 | 32,757 | 0.091 | Operational intermediary connecting parts of the co-presence graph. |
 | Brad Edwards | 24 | 903 | 0.038 | Legal cluster connector with relatively high betweenness despite lower degree. |
-| Karyna Shuliak | 153 | 25,042 | 0.035 | Frequent direct-contact actor with repeated participation in central communication. |
+| Karyna Shuliak | 153 | 25,042 | 0.035 | Frequent metadata co-presence actor with repeated participation near the center. |
 | Ghislaine Maxwell | 56 | 3,753 | 0.030 | Social/legal cluster connector with a bridge-like network position. |
-| Paul Morris | 84 | 28,679 | 0.029 | Operational/administrative connector across central exchanges. |
+| Paul Morris | 84 | 28,679 | 0.029 | Operational/administrative connector across central metadata records. |
 
 ### 4.4 Interactive 3D Network
 
-The interactive graph is a companion artifact to the report. It is designed for exploration while reading, not as standalone evidence. The analytical claims rely on the centrality table, broker chart, and robustness checks. Epstein is the gold center node. Green nodes are one network step away, blue nodes are two steps away, purple nodes are three steps away, and pink nodes are four or more steps away. Node size decreases with distance from Epstein.
+The interactive graph is a companion artifact to the report. It is designed for exploration while reading, not as standalone evidence. The analytical claims rely on the centrality table, broker chart, adjacency matrix, and robustness checks. Epstein is the gold center node because the graph is arranged around the archive's focal actor. Green nodes are one graph step away, blue nodes are two steps away, purple nodes are three steps away, and pink nodes are four or more steps away. These steps are co-presence-network distances only; they are not evidence of social closeness or shared intent.
 
 <iframe src="./network_3d.html" title="Interactive 3D Epstein email network" style="width:100%; height:620px; border:1px solid #d9d5cd;"></iframe>
 
 ### 4.5 Robustness Check
 
-The edge-threshold robustness check strengthens the centralization interpretation. When the minimum repeated co-presence threshold is increased from 2 to 100, the network becomes smaller, but Epstein remains the top weighted-degree actor at every threshold. The largest connected component also remains very large, ranging from 95.75% of nodes at threshold 2 to 98.30% at threshold 100. This means the main network finding is not just an artifact of occasional one-off co-presences; the central structure remains visible even when only repeated ties are retained.
+The edge-threshold robustness check strengthens the centralization interpretation. When the minimum repeated co-presence threshold is increased from 2 to 100, the network becomes smaller, but Epstein remains the top weighted-degree actor at every threshold. This is expected because of the archive boundary, so the main value of the robustness check is narrower: it shows that the observed central structure is not only an artifact of occasional one-off co-presences. The largest connected component also remains very large, ranging from 95.75% of nodes at threshold 2 to 98.30% at threshold 100. Even here, repeated co-presence should be interpreted only as repeated appearance in email metadata, not as proof of a direct relationship.
 
 ![Network robustness across edge thresholds](./assets/network_edge_threshold_robustness.png)
 
@@ -450,7 +457,7 @@ As an additional robustness check, we also tested a directed sender-recipient gr
 <span id="section-discussion" class="anchor-target"></span>
 ## 5. Discussion
 
-The results answer the research question in two connected ways. Text mining reveals that the corpus is mostly about practical coordination: scheduling, travel, finance, media/reputation, and legal communication. Network analysis reveals that this coordination is structurally concentrated around Epstein and a small set of intermediaries. Together, this means the archive is best interpreted as a centralized coordination system: the text shows what work the communication performs, and the network shows who sits at the center of that work.
+The results answer the BUSS425 research question in two connected ways. First, degree, weighted degree, and betweenness centrality show that Epstein is the dominant node in the filtered co-presence network, which is expected given the archive boundary. Second, the same measures reveal the more interesting second layer: a small group of intermediaries whose metadata positions connect administrative, financial, operational, legal, and social parts of the archive. This is the core assignment finding. It describes structure in the released email records, not verified real-world relationships or responsibility.
 
 The findings also clarify what kind of archive this is. It is not best understood as only a collection of scandal keywords or legal documents. Instead, it is a communication infrastructure archive. Its most visible patterns are routine and administrative, but those routines are precisely what make the structure observable. This interpretation is consistent with network research showing that organizational and illicit structures can be visible through repeated coordination patterns and broker positions, even when the underlying relationships are not directly observed (Baker & Faulkner, 1993; Freeman, 1978; Granovetter, 1973). Travel arrangements, meetings, financial administration, and legal/media communication are not separate from the network; they are the communicative practices through which the network appears in the data.
 
@@ -476,7 +483,7 @@ LLMs were used to support coding, report planning, wording, and interpretation d
 
 ## 8. Conclusion and Next Steps
 
-The research question can be answered directly: the corpus is dominated by operational coordination, and that coordination is structurally centralized around Epstein and a small group of intermediaries. The strongest result is not a single keyword, topic, or name. It is the alignment between textual function and network structure.
+The research question can be answered directly: the filtered email co-presence network is centralized around Epstein, but the assignment's more informative result is the identification of structurally important intermediaries beyond that expected center. Lesley Groff, Richard Kahn, Stewart Oldfield, Brad Edwards, Karyna Shuliak, Ghislaine Maxwell, Paul Morris, and Daphne Wallace occupy important positions by weighted co-presence, betweenness, or both. These findings should be stated cautiously: centrality here means structural importance inside released email metadata, not proof of direct communication, close relationship, collaboration, intent, or wrongdoing.
 
 Future work should improve the pipeline in five ways. First, language detection should be strengthened for short and OCR-heavy messages. Second, entity resolution should be manually validated for high-centrality actors. Third, temporal network analysis should test whether centrality and theme composition shift around legally significant events. Fourth, supervised theme classification could replace transparent keyword groups after enough manually labeled examples are created. Fifth, the email co-presence network should be compared with external evidence such as court documents, flight logs, and investigative records to separate corpus-specific communication structure from broader real-world relationships.
 
@@ -491,6 +498,8 @@ Future work should improve the pipeline in five ways. First, language detection 
 | Co-presence edge rule | Two actors appear in the same email metadata |
 | Crowded-email cutoff | Emails with more than 25 actors skipped for co-presence edges |
 | Main network edge threshold | At least 2 repeated co-presences |
+| Full weighted adjacency matrix | `outputs/buss425/full_weighted_adjacency_matrix.csv` |
+| Slide-friendly top-15 adjacency matrix | `docs/buss425_top15_adjacency_matrix.md`; reproducible package copy: `outputs/buss425/top15_weighted_adjacency_matrix.csv` |
 | NMF topics | 8 |
 | Data dictionary companion file | `docs/ms3_data_dictionary.md`; reproducible package copy: `outputs/ms3/data_dictionary.csv` |
 | Key corpus statistics companion file | `docs/ms3_key_corpus_statistics.md`; reproducible package copy: `outputs/ms3/key_corpus_statistics.csv` |

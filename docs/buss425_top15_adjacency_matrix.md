@@ -1,0 +1,25 @@
+---
+title: BUSS425 Top-15 Weighted Adjacency Matrix
+---
+
+# BUSS425 Top-15 Weighted Adjacency Matrix
+
+This slide-friendly matrix contains the first 15 centrality-ranked actors that are present in the retained weighted edge list. Cell values are weighted co-presence counts: the number of retained email metadata records in which two actors appeared together. A zero means no retained repeated co-presence edge in this filtered top-15 submatrix. The full matrix is available at `outputs/buss425/full_weighted_adjacency_matrix.csv`.
+
+| Actor | Jeffrey Epstein [jeffrey-epstein] | Lesley Groff [lesley-groff] | Richard Kahn [richard-kahn] | Stewart Oldfield [stewart-oldfield-] | Brad Edwards [brad-edwards-epllc] | Karyna Shuliak [karyna-shuliak] | Ghislaine Maxwell [ghislaine-maxwell] | Paul Morris [paul-morris-gmail] | Daphne Wallace [daphne-wallace-gmail] | Noam Chomsky [noam-chomsky] | Sigrid McCawley [sigrid-mccawley] | Lawrence Krauss [lawrence-krauss] | Deepak Chopra [deepak-chopra] | Bella Klein [bella-klein-yale] | Larry Summers [larry-summers] |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Jeffrey Epstein [jeffrey-epstein] | 0 | 38558 | 24364 | 678 | 207 | 6527 | 2635 | 4027 | 4597 | 3319 | 0 | 3268 | 2742 | 2361 | 1702 |
+| Lesley Groff [lesley-groff] | 38558 | 0 | 2595 | 33 | 23 | 4007 | 15 | 1467 | 1396 | 210 | 0 | 194 | 197 | 4174 | 215 |
+| Richard Kahn [richard-kahn] | 24364 | 2595 | 0 | 5024 | 2 | 1806 | 4 | 2061 | 1853 | 373 | 0 | 32 | 14 | 4099 | 0 |
+| Stewart Oldfield [stewart-oldfield-] | 678 | 33 | 5024 | 0 | 0 | 4 | 3 | 1772 | 0 | 0 | 0 | 0 | 0 | 1066 | 0 |
+| Brad Edwards [brad-edwards-epllc] | 207 | 23 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 22 | 0 | 0 | 0 | 0 |
+| Karyna Shuliak [karyna-shuliak] | 6527 | 4007 | 1806 | 4 | 0 | 0 | 0 | 5 | 1533 | 18 | 0 | 0 | 0 | 2416 | 2 |
+| Ghislaine Maxwell [ghislaine-maxwell] | 2635 | 15 | 4 | 3 | 0 | 0 | 0 | 26 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Paul Morris [paul-morris-gmail] | 4027 | 1467 | 2061 | 1772 | 0 | 5 | 26 | 0 | 0 | 2 | 0 | 23 | 36 | 152 | 0 |
+| Daphne Wallace [daphne-wallace-gmail] | 4597 | 1396 | 1853 | 0 | 0 | 1533 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1107 | 0 |
+| Noam Chomsky [noam-chomsky] | 3319 | 210 | 373 | 0 | 0 | 18 | 0 | 2 | 0 | 0 | 0 | 122 | 254 | 0 | 0 |
+| Sigrid McCawley [sigrid-mccawley] | 0 | 0 | 0 | 0 | 22 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Lawrence Krauss [lawrence-krauss] | 3268 | 194 | 32 | 0 | 0 | 0 | 0 | 23 | 0 | 122 | 0 | 0 | 6 | 2 | 0 |
+| Deepak Chopra [deepak-chopra] | 2742 | 197 | 14 | 0 | 0 | 0 | 0 | 36 | 0 | 254 | 0 | 6 | 0 | 3 | 0 |
+| Bella Klein [bella-klein-yale] | 2361 | 4174 | 4099 | 1066 | 0 | 2416 | 0 | 152 | 1107 | 0 | 0 | 2 | 3 | 0 | 0 |
+| Larry Summers [larry-summers] | 1702 | 215 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
