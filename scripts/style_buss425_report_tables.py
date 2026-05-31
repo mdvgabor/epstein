@@ -2,7 +2,7 @@ from pathlib import Path
 
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
@@ -77,8 +77,36 @@ def set_table_borders(table) -> None:
         element.set(qn("w:color"), BORDER)
 
 
+def remove_paragraph(paragraph) -> None:
+    element = paragraph._element
+    element.getparent().remove(element)
+    paragraph._p = paragraph._element = None
+
+
+def add_front_matter_page_breaks(document) -> None:
+    paragraphs = document.paragraphs
+    if paragraphs and paragraphs[0].style.name == "Title":
+        remove_paragraph(paragraphs[0])
+
+    for paragraph in document.paragraphs:
+        if paragraph.text.startswith("Course: BUSS425"):
+            paragraph.add_run().add_break(WD_BREAK.PAGE)
+        if paragraph.text.startswith("Abstract\n1. Introduction"):
+            paragraph.add_run().add_break(WD_BREAK.PAGE)
+
+
+def keep_headings_with_following_text(document) -> None:
+    for paragraph in document.paragraphs:
+        if paragraph.style.name.startswith("Heading"):
+            paragraph.paragraph_format.keep_with_next = True
+        if paragraph.text == "Responsible Use Statement":
+            paragraph.insert_paragraph_before().add_run().add_break(WD_BREAK.PAGE)
+
+
 def main() -> None:
     document = Document(DOCX_PATH)
+    add_front_matter_page_breaks(document)
+    keep_headings_with_following_text(document)
     for table in document.tables:
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         table.autofit = True

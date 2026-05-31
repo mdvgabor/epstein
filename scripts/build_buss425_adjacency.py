@@ -51,7 +51,10 @@ def build_edges() -> pd.DataFrame:
         .len()
         .rename({"len": "weight"})
         .filter(pl.col("weight") >= 2)
-        .sort("weight", descending=True)
+        .sort(
+            ["weight", "source", "source_name", "target", "target_name"],
+            descending=[True, False, False, False, False],
+        )
     )
     return pairs.to_pandas()
 
@@ -62,7 +65,9 @@ def build_matrices(edges: pd.DataFrame) -> None:
         name_by_id[row.source] = row.source_name
         name_by_id[row.target] = row.target_name
 
-    actor_ids = sorted(name_by_id, key=lambda person_id: name_by_id[person_id].lower())
+    actor_ids = sorted(
+        name_by_id, key=lambda person_id: (name_by_id[person_id].lower(), person_id)
+    )
     actor_labels = [f"{name_by_id[person_id]} [{person_id}]" for person_id in actor_ids]
     actor_pos = {person_id: index for index, person_id in enumerate(actor_ids)}
 
